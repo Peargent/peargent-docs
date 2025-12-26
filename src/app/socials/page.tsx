@@ -34,7 +34,7 @@ export default function SocialsPage() {
         },
         {
             name: 'GitHub',
-            url: 'https://github.com/Quanta-Naut/peargent',
+            url: 'https://github.com/Peargent/peargent',
             icon: Github,
             description: 'Star us on GitHub',
             bgImage: blackCard,

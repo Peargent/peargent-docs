@@ -15,7 +15,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       },
       {
         text: 'GitHub',
-        url: 'https://github.com/quanta-naut/peargent',
+        url: 'https://github.com/Peargent/peargent',
         external: true,
       },
     ],

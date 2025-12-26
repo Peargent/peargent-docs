@@ -28,7 +28,7 @@ export default function HomePage() {
       .catch(() => setVersion('v0.1 Public Beta')); // Fallback
 
     // Fetch GitHub stars
-    fetch('https://api.github.com/repos/quanta-naut/peargent')
+    fetch('https://api.github.com/repos/Peargent/peargent')
       .then(res => res.json())
       .then(data => setStars(data.stargazers_count))
       .catch((e) => console.error('Error fetching stars:', e));
@@ -124,7 +124,7 @@ export default function HomePage() {
 
             {/* GitHub Star Button */}
             <Link
-              href="https://github.com/quanta-naut/peargent"
+              href="https://github.com/Peargent/peargent"
               target="_blank"
               rel="noopener noreferrer"
               className="group/github relative w-full sm:w-auto px-6 h-12 rounded-lg flex items-center justify-center gap-3 font-medium transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/5 hover:shadow-black/10 overflow-hidden ring-1 ring-black/5"
