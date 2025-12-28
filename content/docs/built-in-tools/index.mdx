@@ -27,53 +27,7 @@ Built-in tools save development time and provide:
 
 ### Text Extraction Tool
 
-Extract plain text and metadata from various document formats including HTML, PDF, DOCX, TXT, Markdown, and URLs.
-
-```python
-from peargent.tools import text_extractor
-
-# Extract text from a document
-result = text_extractor.run({
-    "file_path": "document.pdf",
-    "extract_metadata": True
-})
-
-print(result["text"])
-print(result["metadata"])
-```
-
-**Supported formats:**
-
-- HTML/XHTML with metadata extraction
-- PDF documents with metadata
-- Microsoft Word (DOCX) documents
-- Plain text files with encoding detection
-- Markdown files
-- URLs with SSRF protection
-
-[Learn more about Text Extraction Tool →](/docs/built-in-tools/text-extraction)
-
-## Using Built-in Tools with Agents
-
-Built-in tools work exactly like custom tools. Simply import and pass them to the agent's `tools` parameter:
-
-```python
-from peargent import create_agent
-from peargent.tools import text_extractor # [!code highlight]
-from peargent.models import openai
-
-agent = create_agent(
-    name="DocumentAnalyzer",
-    description="Analyzes documents and extracts key information",
-    persona="You are a document analysis expert",
-    model=openai("gpt-4o"),
-    tools=[text_extractor] # [!code highlight]
-)
-
-response = agent.run("Summarize the key points from research_paper.pdf")
-```
-
-The agent automatically knows how to use the tool based on its description and parameters.
+Extract plain text and metadata from various document formats including HTML, PDF, DOCX, TXT, Markdown, and URLs. This tool enables agents to read and process content from different file types and web pages. Supported formats: HTML/XHTML, PDF, DOCX, TXT, Markdown, and URLs (with SSRF protection). **<u>[Learn more about Text Extraction Tool →](/docs/built-in-tools/text-extraction)</u>**
 
 ## Coming Soon
 
@@ -84,10 +38,4 @@ More built-in tools are in development:
 - **File System Tool** - Read, write, and manage files safely
 - **HTTP Request Tool** - Make API calls with built-in retry logic
 
-Check the [Peargent GitHub repository](https://github.com/peargent-ai/peargent) for the latest updates.
-
-## Next Steps
-
-- [Create custom tools](/docs/tools) for your specific use cases
-- Learn about [error handling in tools](/docs/error-handling-in-tools) for robust implementations
-- Explore [tool output validation](/docs/structured-output/tools-output) for type-safe results
+Check the **<u>[Peargent GitHub repository](https://github.com/Peargent/peargent/tree/main/peargent/tools)</u>** for the latest updates.

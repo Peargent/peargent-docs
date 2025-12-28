@@ -23,94 +23,6 @@ The Text Extraction Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** t
 - **Markdown** - Markdown files with title extraction from headers
 - **URLs** - HTTP/HTTPS web resources with built-in SSRF protection
 
-## How to Use
-
-### Basic Usage
-
-Import the text extraction tool from Peargent:
-
-```python
-from peargent.tools import text_extractor
-
-# Extract text from a file
-result = text_extractor.run({
-    "file_path": "document.pdf"
-})
-
-print(result["text"])
-print(result["format"])
-print(result["success"])
-```
-
-### Parameters
-
-The text extraction tool accepts the following parameters:
-
-- **file_path** (string, required): Path to the file or URL to extract text from
-- **extract_metadata** (boolean, optional, default: False): Whether to extract metadata like title, author, page count, etc.
-- **max_length** (integer, optional): Maximum text length to return. If exceeded, text is truncated with "..." appended
-
-### Return Value
-
-The tool returns a dictionary with the following structure:
-
-```python
-{
-    "text": "Extracted plain text content",
-    "metadata": {
-        "title": "Document Title",
-        "author": "Author Name",
-        # ... additional metadata depending on format
-    },
-    "format": "pdf",  # Detected file format
-    "success": True,
-    "error": None
-}
-```
-
-### Metadata by Format
-
-Different document formats provide different metadata:
-
-**HTML/XHTML:**
-
-- `title` - Page title
-- `description` - Meta description tag
-- `author` - Meta author tag
-- `word_count` - Number of words
-- `char_count` - Number of characters
-
-**PDF:**
-
-- `title` - Document title
-- `author` - Document author
-- `subject` - Document subject
-- `creator` - Application that created the PDF
-- `producer` - PDF producer
-- `creation_date` - When the document was created
-- `page_count` - Total number of pages
-- `word_count` - Total word count
-- `char_count` - Total character count
-
-**DOCX:**
-
-- `title` - Document title
-- `author` - Document author
-- `subject` - Document subject
-- `created` - Creation date and time
-- `modified` - Last modification date and time
-- `word_count` - Total word count
-- `char_count` - Total character count
-- `paragraph_count` - Number of paragraphs
-
-**TXT/Markdown:**
-
-- `encoding` - Text encoding used
-- `word_count` - Total word count
-- `char_count` - Total character count
-- `line_count` - Total line count
-- `title` - (Markdown only) Title extracted from first heading
-
 ## Usage with Agents
 
 The Text Extraction **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically extract and process document content.
@@ -142,27 +54,6 @@ response = agent.run("Summarize the key points from document.pdf")
 print(response)
 ```
 
-### Multi-Tool Workflows
-
-Combine the text extraction tool with other tools for complex workflows. Each agent can be configured with different **<u>[Models](/docs/models)</u>** based on your requirements:
-
-```python
-from peargent import create_agent
-from peargent.tools import text_extractor # [!code highlight]
-from peargent.models import anthropic
-
-agent = create_agent(
-    name="DocumentProcessor",
-    description="Processes documents and performs various operations",
-    persona="You are a document processing expert",
-    model=anthropic("claude-3-5-sonnet-20241022"),
-    tools=[text_extractor]  # Add other tools as needed # [!code highlight]
-)
-
-# Agent can now extract text and perform operations on it
-response = agent.run("Extract text from this PDF and identify all email addresses")
-```
-
 ## Examples
 
 ### Example 1: Extract Text with Metadata
@@ -170,7 +61,7 @@ response = agent.run("Extract text from this PDF and identify all email addresse
 ```python
 from peargent.tools import text_extractor
 
-# Extract text and metadata from an HTML file
+# Extract text and metadata from an HTML file # [!code highlight:4]
 result = text_extractor.run({
     "file_path": "article.html",
     "extract_metadata": True
@@ -192,7 +83,7 @@ from peargent.tools import text_extractor
 
 # Extract text from a web page
 result = text_extractor.run({
-    "file_path": "https://example.com/article",
+    "file_path": "https://example.com/article", # [!code highlight]
     "extract_metadata": True
 })
 
@@ -210,7 +101,7 @@ from peargent.tools import text_extractor
 result = text_extractor.run({
     "file_path": "long_document.pdf",
     "extract_metadata": True,
-    "max_length": 1000
+    "max_length": 1000 # [!code highlight]
 })
 
 print(f"Text (max 1000 chars): {result['text']}")
@@ -266,57 +157,6 @@ response = agent.run(
 print(response)
 ```
 
-### Example 6: Conditional Text Extraction
-
-```python
-from peargent.tools import text_extractor
-import os
-from typing import Optional
-
-def safe_extract_text(file_path: str, max_length: Optional[int] = None) -> str:
-    """Safely extract text with error handling."""
-    if not os.path.exists(file_path):
-        return f"File not found: {file_path}"
-
-    result = text_extractor.run({
-        "file_path": file_path,
-        "extract_metadata": True,
-        "max_length": max_length
-    })
-
-    if result["success"]:
-        return result["text"]
-    else:
-        return f"Error: {result['error']}"
-
-# Usage
-text = safe_extract_text("document.docx", max_length=2000)
-print(text)
-```
-
-## Security Features
-
-The Text Extraction Tool includes built-in security features:
-
-- **SSRF Protection**: URL validation prevents access to localhost and private IP addresses
-- **Scheme Validation**: Only HTTP and HTTPS URLs are allowed
-- **Encoding Safety**: Automatic fallback encoding detection for text files
-- **Error Handling**: Graceful error handling with detailed error messages
-
-## Dependencies
-
-Some document formats require optional dependencies:
-
-- **HTML extraction**: `beautifulsoup4` (`pip install beautifulsoup4`)
-- **PDF extraction**: `pypdf>=6.0.0` (`pip install pypdf`)
-- **DOCX extraction**: `python-docx` (`pip install python-docx`)
-
-Or install all at once:
-
-```bash
-pip install peargent[text-extraction]
-```
-
 ## Common Use Cases
 
 1. **Document Summarization**: Extract text from documents and have agents summarize them
@@ -356,3 +196,72 @@ result = text_extractor.run({"file_path": "https://example.com/doc"})
 ### Encoding Issues with Text Files
 
 For text files with non-standard encoding, the tool automatically detects encoding. If issues persist, ensure the file is properly encoded.
+
+## Parameters
+
+The text extraction tool accepts the following parameters:
+
+- **file_path** (string, required): Path to the file or URL to extract text from
+- **extract_metadata** (boolean, optional, default: False): Whether to extract metadata like title, author, page count, etc.
+- **max_length** (integer, optional): Maximum text length to return. If exceeded, text is truncated with "..." appended
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+```python
+{
+    "text": "Extracted plain text content",
+    "metadata": {
+        "title": "Document Title",
+        "author": "Author Name",
+        # ... additional metadata depending on format
+    },
+    "format": "pdf",  # Detected file format
+    "success": True,
+    "error": None
+}
+```
+
+## Metadata by Format
+
+Different document formats provide different metadata:
+
+**HTML/XHTML:**
+
+- `title` - Page title
+- `description` - Meta description tag
+- `author` - Meta author tag
+- `word_count` - Number of words
+- `char_count` - Number of characters
+
+**PDF:**
+
+- `title` - Document title
+- `author` - Document author
+- `subject` - Document subject
+- `creator` - Application that created the PDF
+- `producer` - PDF producer
+- `creation_date` - When the document was created
+- `page_count` - Total number of pages
+- `word_count` - Total word count
+- `char_count` - Total character count
+
+**DOCX:**
+
+- `title` - Document title
+- `author` - Document author
+- `subject` - Document subject
+- `created` - Creation date and time
+- `modified` - Last modification date and time
+- `word_count` - Total word count
+- `char_count` - Total character count
+- `paragraph_count` - Number of paragraphs
+
+**TXT/Markdown:**
+
+- `encoding` - Text encoding used
+- `word_count` - Total word count
+- `char_count` - Total character count
+- `line_count` - Total line count
+- `title` - (Markdown only) Title extracted from first heading
