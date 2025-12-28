@@ -61,10 +61,10 @@ print(response)
 ```python
 from peargent.tools import text_extractor
 
-# Extract text and metadata from an HTML file # [!code highlight:4]
+# Extract text and metadata from an HTML file 
 result = text_extractor.run({
     "file_path": "article.html",
-    "extract_metadata": True
+    "extract_metadata": True # [!code highlight]
 })
 
 if result["success"]:
@@ -167,36 +167,6 @@ print(response)
 6. **Research Assistance**: Analyze research papers and academic documents
 7. **Compliance Review**: Extract and review document contents for compliance checking
 
-## Troubleshooting
-
-### ImportError for document libraries
-
-If you encounter ImportError when extracting specific formats, install the required dependencies:
-
-```bash
-# For all formats
-pip install peargent[text-extraction]
-
-# Or individually
-pip install beautifulsoup4 pypdf python-docx
-```
-
-### SSRF Protection Errors
-
-If you receive "Access to localhost is not allowed" error, ensure you're using a public URL:
-
-```python
-# This will fail
-result = text_extractor.run({"file_path": "http://localhost:8000/doc"})
-
-# Use a public URL instead
-result = text_extractor.run({"file_path": "https://example.com/doc"})
-```
-
-### Encoding Issues with Text Files
-
-For text files with non-standard encoding, the tool automatically detects encoding. If issues persist, ensure the file is properly encoded.
-
 ## Parameters
 
 The text extraction tool accepts the following parameters:
@@ -265,3 +235,33 @@ Different document formats provide different metadata:
 - `char_count` - Total character count
 - `line_count` - Total line count
 - `title` - (Markdown only) Title extracted from first heading
+
+## Troubleshooting
+
+### ImportError for document libraries
+
+If you encounter ImportError when extracting specific formats, install the required dependencies:
+
+```bash
+# For all formats
+pip install peargent[text-extraction]
+
+# Or individually
+pip install beautifulsoup4 pypdf python-docx
+```
+
+### SSRF Protection Errors
+
+If you receive "Access to localhost is not allowed" error, ensure you're using a public URL:
+
+```python
+# This will fail
+result = text_extractor.run({"file_path": "http://localhost:8000/doc"})
+
+# Use a public URL instead
+result = text_extractor.run({"file_path": "https://example.com/doc"})
+```
+
+### Encoding Issues with Text Files
+
+For text files with non-standard encoding, the tool automatically detects encoding. If issues persist, ensure the file is properly encoded.
