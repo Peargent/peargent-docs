@@ -12,7 +12,7 @@ description: Learn how to use the text extraction tool with Peargent agents
 
 ## Overview
 
-The Text Extraction Tool is a built-in Peargent tool that enables agents to extract plain text from various document formats. It supports HTML, PDF, DOCX, TXT, and Markdown files, as well as URLs. The tool can optionally extract metadata such as title, author, page count, and character counts.
+The Text Extraction Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to extract plain text from various document formats. It supports HTML, PDF, DOCX, TXT, and Markdown files, as well as URLs. The tool can optionally extract metadata such as title, author, page count, and character counts.
 
 ### Supported Formats
 
@@ -113,13 +113,15 @@ Different document formats provide different metadata:
 
 ## Usage with Agents
 
-The Text Extraction Tool is most powerful when integrated with agents. Agents can use the tool to automatically extract and process document content.
+The Text Extraction **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically extract and process document content.
 
 ### Creating an Agent with Text Extraction
 
+To use the text extraction tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor
+from peargent.tools import text_extractor // [!code highlight:3]
 from peargent.models import gemini
 
 # Create an agent with text extraction capability
@@ -132,7 +134,7 @@ agent = create_agent(
         "and summarize the information."
     ),
     model=gemini("gemini-2.5-flash-lite"),
-    tools=[text_extractor]
+    tools=[text_extractor] // [!code highlight]
 )
 
 # Use the agent to analyze a document
@@ -142,11 +144,11 @@ print(response)
 
 ### Multi-Tool Workflows
 
-Combine the text extraction tool with other tools for complex workflows:
+Combine the text extraction tool with other tools for complex workflows. Each agent can be configured with different **<u>[Models](/docs/models)</u>** based on your requirements:
 
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor
+from peargent.tools import text_extractor // [!code highlight:3]
 from peargent.models import anthropic
 
 agent = create_agent(
@@ -154,7 +156,7 @@ agent = create_agent(
     description="Processes documents and performs various operations",
     persona="You are a document processing expert",
     model=anthropic("claude-3-5-sonnet-20241022"),
-    tools=[text_extractor]  # Add other tools as needed
+    tools=[text_extractor]  # Add other tools as needed // [!code highlight]
 )
 
 # Agent can now extract text and perform operations on it
@@ -241,7 +243,7 @@ for file_path in documents:
 
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor
+from peargent.tools import text_extractor // [!code highlight:3]
 from peargent.models import gemini
 
 # Create a document analysis agent
@@ -254,7 +256,7 @@ agent = create_agent(
         "1) Main topic, 2) Key findings, 3) Methodology, 4) Conclusions"
     ),
     model=gemini("gemini-2.5-flash-lite"),
-    tools=[text_extractor]
+    tools=[text_extractor] // [!code highlight]
 )
 
 # Ask the agent to analyze a research paper
