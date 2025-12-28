@@ -271,8 +271,9 @@ print(response)
 ```python
 from peargent.tools import text_extractor
 import os
+from typing import Optional
 
-def safe_extract_text(file_path: str, max_length: int = None) -> str:
+def safe_extract_text(file_path: str, max_length: Optional[int] = None) -> str:
     """Safely extract text with error handling."""
     if not os.path.exists(file_path):
         return f"File not found: {file_path}"
