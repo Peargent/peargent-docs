@@ -121,7 +121,7 @@ To use the text extraction tool with an agent, you need to configure it with a *
 
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor // [!code highlight:3]
+from peargent.tools import text_extractor # [!code highlight]
 from peargent.models import gemini
 
 # Create an agent with text extraction capability
@@ -134,7 +134,7 @@ agent = create_agent(
         "and summarize the information."
     ),
     model=gemini("gemini-2.5-flash-lite"),
-    tools=[text_extractor] // [!code highlight]
+    tools=[text_extractor] # [!code highlight]
 )
 
 # Use the agent to analyze a document
@@ -148,7 +148,7 @@ Combine the text extraction tool with other tools for complex workflows. Each ag
 
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor // [!code highlight:3]
+from peargent.tools import text_extractor # [!code highlight]
 from peargent.models import anthropic
 
 agent = create_agent(
@@ -156,7 +156,7 @@ agent = create_agent(
     description="Processes documents and performs various operations",
     persona="You are a document processing expert",
     model=anthropic("claude-3-5-sonnet-20241022"),
-    tools=[text_extractor]  # Add other tools as needed // [!code highlight]
+    tools=[text_extractor]  # Add other tools as needed # [!code highlight]
 )
 
 # Agent can now extract text and perform operations on it
@@ -243,7 +243,7 @@ for file_path in documents:
 
 ```python
 from peargent import create_agent
-from peargent.tools import text_extractor // [!code highlight:3]
+from peargent.tools import text_extractor # [!code highlight]
 from peargent.models import gemini
 
 # Create a document analysis agent
@@ -256,7 +256,7 @@ agent = create_agent(
         "1) Main topic, 2) Key findings, 3) Methodology, 4) Conclusions"
     ),
     model=gemini("gemini-2.5-flash-lite"),
-    tools=[text_extractor] // [!code highlight]
+    tools=[text_extractor] # [!code highlight]
 )
 
 # Ask the agent to analyze a research paper
