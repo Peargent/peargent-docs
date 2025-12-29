@@ -3,6 +3,7 @@ import type { MDXComponents } from 'mdx/types';
 import { createGenerator } from 'fumadocs-typescript';
 import { AutoTypeTable } from 'fumadocs-typescript/ui';
 import { GithubCard } from './components/github-card';
+import { ContributorCredit } from './components/contributor-credit';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -11,6 +12,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
       <AutoTypeTable {...props} generator={createGenerator(props)} />
     ),
     GithubCard,
+    ContributorCredit,
     ...components,
   };
 }
