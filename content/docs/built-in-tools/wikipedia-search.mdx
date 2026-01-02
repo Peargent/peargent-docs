@@ -161,7 +161,7 @@ result = wikipedia_tool.run({
 if result["success"] and result["text"]:
     print(f"Title: {result['metadata']['title']}")
     print(f"Brief Summary: {result['text']}")
-    # Output will be max 300 characters with "..." if truncated
+    # Output text is limited to at most 300 characters, with "..." appended if truncated
 ```
 
 ### Example 6: Handling Non-Existent Articles
@@ -265,8 +265,8 @@ for topic in topics:
 The Wikipedia tool accepts the following parameters:
 
 - **query** (string, required): Search term or article title to look up on Wikipedia
-- **extract_links** (boolean, optional, default: True): Whether to extract internal Wikipedia links from the article
-- **extract_categories** (boolean, optional, default: False): Whether to extract article categories
+- **extract_links** (boolean, optional, default: True): Whether to extract internal Wikipedia links from the article. Automatically limited to 50 links maximum
+- **extract_categories** (boolean, optional, default: False): Whether to extract article categories. Automatically limited to 50 categories maximum
 - **max_summary_length** (integer, optional): Maximum summary length in characters. If exceeded, text is truncated with "..." appended
 - **language** (string, optional, default: "en"): Wikipedia language code (e.g., "en" for English, "fr" for French, "es" for Spanish, "de" for German)
 
