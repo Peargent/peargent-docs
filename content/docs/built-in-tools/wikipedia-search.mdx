@@ -1,0 +1,422 @@
+---
+title: Wikipedia Search
+description: Learn how to use the Wikipedia search tool with Peargent agents
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Wikipedia Search</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Learn how to use the Wikipedia search tool with Peargent agents
+</h3>
+
+## Overview
+
+The Wikipedia Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to search Wikipedia and extract knowledge from articles. It supports article search with fuzzy matching, summary extraction, related links, categories, multi-language support, and intelligent handling of disambiguation pages and missing articles.
+
+### Key Features
+
+- **Smart Article Search** - Finds best match even with fuzzy queries
+- **Summary Extraction** - Extracts article introductions and summaries
+- **Related Links** - Optionally extracts internal Wikipedia links
+- **Categories** - Optionally extracts article categories
+- **Disambiguation Handling** - Provides options when articles have multiple meanings
+- **Article Suggestions** - Suggests alternatives when articles don't exist
+- **Multi-Language Support** - Query Wikipedia in any language (en, fr, es, de, etc.)
+- **Summary Length Control** - Limit summary length to fit your needs
+
+## Usage with Agents
+
+The Wikipedia **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically search Wikipedia and retrieve accurate information.
+
+### Creating an Agent with Wikipedia Tool
+
+To use the Wikipedia tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
+```python
+from peargent import create_agent
+from peargent.tools import wikipedia_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an agent with Wikipedia search capability
+agent = create_agent(
+    name="ResearchAssistant",
+    description="A helpful research assistant that uses Wikipedia",
+    persona=(
+        "You are a knowledgeable research assistant. When asked about topics, "
+        "use Wikipedia to find accurate information and provide concise, "
+        "well-cited summaries. Always include the Wikipedia article title and URL."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[wikipedia_tool] # [!code highlight]
+)
+
+# Use the agent to research a topic
+response = agent.run("Tell me about quantum computing")
+print(response)
+```
+
+## Examples
+
+### Example 1: Basic Wikipedia Search
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Search for a well-known article
+result = wikipedia_tool.run({"query": "Artificial Intelligence"})
+
+if result["success"] and result["text"]:
+    print(f"Title: {result['metadata']['title']}")
+    print(f"URL: {result['metadata']['url']}")
+    print(f"\nSummary:\n{result['text']}")
+
+    # Access related links
+    if 'links' in result['metadata']:
+        print(f"\nRelated Topics: {result['metadata']['links'][:5]}")
+else:
+    print(f"Error: {result['error']}")
+```
+
+### Example 2: Search with Categories
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Extract article categories
+result = wikipedia_tool.run({
+    "query": "Machine Learning",
+    "extract_categories": True # [!code highlight]
+})
+
+if result["success"] and result["text"]:
+    print(f"Title: {result['metadata']['title']}")
+    print(f"Summary: {result['text'][:200]}...")
+
+    # Display categories
+    if 'categories' in result['metadata']:
+        print(f"\nCategories:")
+        for category in result['metadata']['categories'][:10]:
+            print(f"  - {category}")
+```
+
+### Example 3: Handling Disambiguation Pages
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Search for an ambiguous term
+result = wikipedia_tool.run({"query": "Mercury"})
+
+if 'disambiguation' in result.get('metadata', {}):
+    print(f"'{result['metadata']['title']}' has multiple meanings:")
+    print("\nOptions:")
+    for i, option in enumerate(result['metadata']['disambiguation'][:10], 1):
+        print(f"  {i}. {option}")
+
+    # Search for a specific option
+    specific_result = wikipedia_tool.run({"query": "Mercury (planet)"}) # [!code highlight]
+    print(f"\nSpecific article: {specific_result['metadata']['title']}")
+    print(f"Summary: {specific_result['text'][:150]}...")
+```
+
+### Example 4: Multi-Language Support
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Search Wikipedia in French
+result = wikipedia_tool.run({
+    "query": "Tour Eiffel",
+    "language": "fr" # [!code highlight]
+})
+
+if result["success"] and result["text"]:
+    print(f"Title: {result['metadata']['title']}")
+    print(f"URL: {result['metadata']['url']}")
+    print(f"Summary (French): {result['text'][:200]}...")
+
+# Search Wikipedia in Spanish
+result = wikipedia_tool.run({
+    "query": "Inteligencia Artificial",
+    "language": "es" # [!code highlight]
+})
+
+if result["success"] and result["text"]:
+    print(f"Title: {result['metadata']['title']}")
+    print(f"Summary (Spanish): {result['text'][:200]}...")
+```
+
+### Example 5: Summary Length Control
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Limit summary to 300 characters
+result = wikipedia_tool.run({
+    "query": "Climate Change",
+    "max_summary_length": 300 # [!code highlight]
+})
+
+if result["success"] and result["text"]:
+    print(f"Title: {result['metadata']['title']}")
+    print(f"Brief Summary: {result['text']}")
+    # Output will be max 300 characters with "..." if truncated
+```
+
+### Example 6: Handling Non-Existent Articles
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Search for an article that doesn't exist
+result = wikipedia_tool.run({"query": "asdfghjkl"})
+
+if not result["text"]:
+    print("Article not found!")
+
+    # Check for suggestions
+    if 'suggestions' in result.get('metadata', {}):
+        print("\nSuggested articles:")
+        for suggestion in result['metadata']['suggestions']:
+            print(f"  - {suggestion}")
+
+    if 'message' in result.get('metadata', {}):
+        print(f"\nMessage: {result['metadata']['message']}")
+```
+
+### Example 7: Research Agent with Wikipedia
+
+```python
+from peargent import create_agent
+from peargent.tools import wikipedia_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create a research agent
+agent = create_agent(
+    name="WikipediaExpert",
+    description="An expert Wikipedia researcher",
+    persona=(
+        "You are an expert research assistant. Use Wikipedia to find accurate "
+        "information about topics. When you find information, cite the Wikipedia "
+        "article by including the article title and URL in your response. "
+        "If a term has multiple meanings (disambiguation), explain the options "
+        "and ask the user which one they're interested in."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[wikipedia_tool] # [!code highlight]
+)
+
+# Research a complex topic
+response = agent.run(
+    "I want to learn about quantum computing. Please provide an overview "
+    "and tell me about key pioneers in this field."
+)
+print(response)
+
+# Follow-up question
+response = agent.run(
+    "What are the main applications of quantum computing?"
+)
+print(response)
+```
+
+### Example 8: Batch Research Multiple Topics
+
+```python
+from peargent.tools import wikipedia_tool
+
+# Research multiple topics
+topics = [
+    "Neural Networks",
+    "Deep Learning",
+    "Natural Language Processing"
+]
+
+print("Researching multiple topics from Wikipedia:\n")
+
+for topic in topics:
+    result = wikipedia_tool.run({
+        "query": topic,
+        "max_summary_length": 150
+    })
+
+    if result["success"] and result["text"]:
+        print(f"📖 {result['metadata']['title']}")
+        print(f"   {result['text']}")
+        print(f"   🔗 {result['metadata']['url']}\n")
+    else:
+        print(f"❌ Could not find: {topic}\n")
+```
+
+## Common Use Cases
+
+1. **Research Assistance**: Quickly look up facts, definitions, and summaries for research
+2. **Educational Content**: Retrieve accurate information for learning materials
+3. **Content Generation**: Gather background information for articles or blog posts
+4. **Fact Checking**: Verify information against Wikipedia articles
+5. **Multi-Language Research**: Access Wikipedia content in various languages
+6. **Topic Exploration**: Discover related topics through article links and categories
+7. **Chatbot Knowledge**: Power conversational AI with Wikipedia knowledge
+8. **Automated Summarization**: Extract concise summaries from Wikipedia articles
+
+## Parameters
+
+The Wikipedia tool accepts the following parameters:
+
+- **query** (string, required): Search term or article title to look up on Wikipedia
+- **extract_links** (boolean, optional, default: True): Whether to extract internal Wikipedia links from the article
+- **extract_categories** (boolean, optional, default: False): Whether to extract article categories
+- **max_summary_length** (integer, optional): Maximum summary length in characters. If exceeded, text is truncated with "..." appended
+- **language** (string, optional, default: "en"): Wikipedia language code (e.g., "en" for English, "fr" for French, "es" for Spanish, "de" for German)
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+```python
+{
+    "text": "Article summary/introduction text",
+    "metadata": {
+        "title": "Article Title",
+        "url": "https://en.wikipedia.org/wiki/Article_Title",
+        "links": ["Related Article 1", "Related Article 2", ...],  # if extract_links=True
+        "categories": ["Category 1", "Category 2", ...],  # if extract_categories=True
+        "suggestions": ["Suggestion 1", "Suggestion 2", ...],  # if article not found
+        "disambiguation": ["Option 1", "Option 2", ...],  # if disambiguation page
+        "message": "Informational message"  # if applicable
+    },
+    "format": "wikipedia",
+    "success": True,
+    "error": None
+}
+```
+
+## Metadata Fields
+
+The metadata dictionary may contain different fields depending on the search result:
+
+**Successful Article Found:**
+
+- `title` - The Wikipedia article title
+- `url` - Full URL to the Wikipedia article
+- `links` - List of related article titles (if `extract_links=True`)
+- `categories` - List of article categories (if `extract_categories=True`)
+
+**Disambiguation Page:**
+
+- `title` - The disambiguation page title
+- `url` - URL to the disambiguation page
+- `disambiguation` - List of possible article titles to choose from
+
+**Article Not Found:**
+
+- `suggestions` - List of suggested article titles that might match
+- `message` - Explanation message about why the article wasn't found
+
+## Language Codes
+
+The Wikipedia tool supports searching in any Wikipedia language. Common language codes include:
+
+- `en` - English
+- `fr` - French
+- `es` - Spanish
+- `de` - German
+- `it` - Italian
+- `pt` - Portuguese
+- `ru` - Russian
+- `ja` - Japanese
+- `zh` - Chinese
+- `ar` - Arabic
+- `hi` - Hindi
+
+See [Wikipedia Language Editions](https://meta.wikimedia.org/wiki/List_of_Wikipedias) for a complete list.
+
+## Best Practices
+
+1. **Be Specific**: Use specific article titles when possible (e.g., "Python (programming language)" instead of "Python")
+2. **Handle Disambiguation**: Always check for disambiguation pages and handle them appropriately
+3. **Check Success**: Always verify `result["success"]` before using the data
+4. **Limit Summary Length**: Use `max_summary_length` to prevent overly long responses
+5. **Extract Only What You Need**: Set `extract_links=False` and `extract_categories=False` if you don't need that data
+6. **Cite Sources**: When using with agents, include Wikipedia URLs in responses
+7. **Handle Errors Gracefully**: Implement error handling for network issues and missing articles
+8. **Use Appropriate Language**: Specify the correct language code for non-English queries
+
+## Performance Considerations
+
+- Wikipedia API requests typically complete in 1-3 seconds
+- The tool automatically limits links to 50 and categories to 50 to improve performance
+- Use `max_summary_length` to reduce response size when needed
+- Only extract links and categories when necessary
+
+## Troubleshooting
+
+### ImportError for requests library
+
+If you encounter "requests library is required" error, install the dependency:
+
+```bash
+pip install requests
+```
+
+Or install with Peargent:
+
+```bash
+pip install peargent[wikipedia]
+```
+
+### Network Errors
+
+If you receive network errors, check your internet connection and try again:
+
+```python
+result = wikipedia_tool.run({"query": "Python programming"})
+
+if not result["success"]:
+    print(f"Error: {result['error']}")
+    # Handle network errors, timeouts, etc.
+```
+
+### Invalid Language Code
+
+Ensure you use valid 2-3 letter language codes:
+
+```python
+# Valid
+result = wikipedia_tool.run({"query": "Topic", "language": "en"})
+
+# Invalid - will return error
+result = wikipedia_tool.run({"query": "Topic", "language": "english"})
+```
+
+### Article Not Found
+
+When an article isn't found, check the suggestions:
+
+```python
+result = wikipedia_tool.run({"query": "Misspelled Topic"})
+
+if not result["text"] and 'suggestions' in result.get('metadata', {}):
+    print("Did you mean:")
+    for suggestion in result['metadata']['suggestions']:
+        print(f"  - {suggestion}")
+```
+
+### Disambiguation Pages
+
+When you encounter a disambiguation page, choose a more specific query:
+
+```python
+result = wikipedia_tool.run({"query": "Python"})
+
+if 'disambiguation' in result.get('metadata', {}):
+    # Show options to user and search for specific one
+    result = wikipedia_tool.run({"query": "Python (programming language)"})
+```
+
+<ContributorCredit
+  message="Wikipedia Search Tool contributed by"
+  username="Vivek13121"
+  link="https://github.com/Vivek13121"
+/>

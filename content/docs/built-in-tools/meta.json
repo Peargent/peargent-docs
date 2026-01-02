@@ -1,5 +1,5 @@
 {
   "title": "Built-in Tools",
   "description": "Built-in tools for Peargent agents",
-  "pages": ["text-extraction"]
+  "pages": ["text-extraction", "wikipedia-search"]
 }
