@@ -1,0 +1,593 @@
+---
+title: DateTime Operations
+description: Learn how to use the DateTime tool with Peargent agents for time operations
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">DateTime Operations</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Learn how to use the DateTime tool with Peargent agents for time operations
+</h3>
+
+## Overview
+
+The DateTime Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to work with dates, times, timezones, and perform time-based calculations. It supports current time retrieval, time difference calculations, date parsing with multiple formats, and timezone conversions across all IANA timezones.
+
+### Key Features
+
+- **Current Time Retrieval** - Get current UTC or timezone-specific time instantly
+- **No Parameters Required** - Simple call without parameters returns current UTC time
+- **Time Difference Calculations** - Calculate duration between any two dates/times
+- **Smart Unit Selection** - Automatically chooses appropriate units (seconds/minutes/hours/days/weeks)
+- **Date Parsing** - Parse ISO 8601, Unix timestamps, and common date formats
+- **Timezone Conversion** - Convert between any IANA timezones
+- **Custom Formatting** - Format output using Python strftime patterns
+- **Human-Readable Output** - Generates natural descriptions like "12 days, 7 hours"
+- **Comprehensive Metadata** - Returns ISO format, timestamp, and date components
+
+## Common Use Cases
+
+1. **Scheduling & Reminders**: Calculate time until events, meetings, or deadlines
+2. **Timezone Coordination**: Convert meeting times across global timezones
+3. **Time Tracking**: Calculate work hours, duration between timestamps
+4. **Natural Language Queries**: Answer "What time is it in Tokyo?" or "How many days until..."
+5. **Date Formatting**: Convert dates between different formats (ISO, human-readable, custom)
+6. **Time-Sensitive Operations**: Perform actions based on current time or time windows
+7. **Calendar Integration**: Calculate dates for scheduling and planning
+8. **Historical Analysis**: Calculate time elapsed since past events
+
+## Usage with Agents
+
+The DateTime **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically handle time-based queries and calculations.
+
+### Creating an Agent with DateTime Tool
+
+To use the DateTime tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
+```python
+from peargent import create_agent
+from peargent.tools import datetime_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an agent with DateTime capability
+agent = create_agent(
+    name="TimeKeeper",
+    description="A helpful time and scheduling assistant",
+    persona=(
+        "You are a knowledgeable time assistant. Help users with date calculations, "
+        "timezone conversions, and scheduling queries. Always provide precise "
+        "information and explain time differences clearly."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[datetime_tool] # [!code highlight]
+)
+
+# Use the agent to answer time queries
+response = agent.run("What time is it in Tokyo right now?")
+print(response)
+```
+
+## Examples
+
+### Example 1: Get Current Time (Simplest Usage)
+
+```python
+from peargent.tools import datetime_tool
+
+# Get current UTC time - no parameters needed!
+result = datetime_tool.run({}) # [!code highlight]
+
+if result["success"]:
+    print(f"Current UTC time: {result['datetime']}")
+    print(f"Timezone: {result['timezone']}")
+    print(f"Unix timestamp: {result['timestamp']}")
+    print(f"It's {result['components']['weekday']}")
+```
+
+### Example 2: Get Time in Specific Timezone
+
+```python
+from peargent.tools import datetime_tool
+
+# Get current time in New York
+result = datetime_tool.run({
+    "operation": "current",
+    "tz": "America/New_York" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"New York time: {result['datetime']}")
+    print(f"Hour: {result['components']['hour']}")
+    print(f"Weekday: {result['components']['weekday']}")
+
+# Get current time in Tokyo
+result = datetime_tool.run({
+    "operation": "current",
+    "tz": "Asia/Tokyo" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"Tokyo time: {result['datetime']}")
+```
+
+### Example 3: Custom Time Formatting
+
+```python
+from peargent.tools import datetime_tool
+
+# Format time in a human-readable way
+result = datetime_tool.run({
+    "operation": "current",
+    "format_string": "%B %d, %Y at %I:%M %p" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"Formatted: {result['datetime']}")
+    # Output: "January 13, 2026 at 03:30 PM"
+
+# Format as date only
+result = datetime_tool.run({
+    "operation": "current",
+    "format_string": "%Y-%m-%d" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"Date only: {result['datetime']}")
+    # Output: "2026-01-13"
+```
+
+### Example 4: Calculate Time Difference
+
+```python
+from peargent.tools import datetime_tool
+
+# Calculate days between two dates
+result = datetime_tool.run({
+    "operation": "difference", # [!code highlight]
+    "start_time": "2026-01-01",
+    "end_time": "2026-12-31"
+})
+
+if result["success"]:
+    print(f"Difference: {abs(result['difference'])} {result['unit']}")
+    print(f"Human readable: {result['human_readable']}")
+    print(f"Total seconds: {result['total_seconds']}")
+    print(f"Days: {result['components']['days']}")
+```
+
+### Example 5: Calculate Time Until Future Event
+
+```python
+from peargent.tools import datetime_tool
+
+# Calculate time from now until a future date
+result = datetime_tool.run({
+    "operation": "difference", # [!code highlight]
+    "start_time": "2026-06-15T00:00:00Z"
+    # end_time omitted = uses current time
+})
+
+if result["success"]:
+    if result["is_future"]:
+        print(f"Time until event: {result['human_readable']}")
+    else:
+        print(f"Time since event: {result['human_readable']}")
+
+    print(f"Exact difference: {abs(result['difference'])} {result['unit']}")
+```
+
+### Example 6: Calculate with Specific Units
+
+```python
+from peargent.tools import datetime_tool
+
+# Calculate work hours
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-13T09:00:00",
+    "end_time": "2026-01-13T17:30:00",
+    "unit": "hours" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"Work hours: {result['difference']} hours")
+    print(f"Breakdown: {result['components']['hours']}h {result['components']['minutes']}m")
+
+# Calculate in weeks
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-01",
+    "end_time": "2026-12-31",
+    "unit": "weeks" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"Weeks in year: {abs(result['difference']):.1f} weeks")
+```
+
+### Example 7: Parse and Reformat Dates
+
+```python
+from peargent.tools import datetime_tool
+
+# Parse various date formats
+date_inputs = [
+    "2026-01-13",
+    "2026-01-13 15:30:00",
+    "13-01-2026",
+    "January 13, 2026",
+    "1736784600"  # Unix timestamp
+]
+
+for date_input in date_inputs:
+    result = datetime_tool.run({
+        "operation": "parse", # [!code highlight]
+        "datetime_string": date_input,
+        "output_format": "%Y-%m-%d %H:%M:%S"
+    })
+
+    if result["success"]:
+        print(f"{date_input:30s} -> {result['datetime']}")
+```
+
+### Example 8: Convert Between Timezones
+
+```python
+from peargent.tools import datetime_tool
+
+# Convert UTC time to different timezones
+utc_time = "2026-01-13T15:30:00Z"
+
+timezones = ["America/New_York", "Europe/London", "Asia/Tokyo"]
+
+for tz in timezones:
+    result = datetime_tool.run({
+        "operation": "parse", # [!code highlight]
+        "datetime_string": utc_time,
+        "output_timezone": tz # [!code highlight]
+    })
+
+    if result["success"]:
+        print(f"{tz:20s}: {result['datetime']}")
+```
+
+### Example 9: Meeting Scheduler Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import datetime_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create a scheduling assistant
+agent = create_agent(
+    name="SchedulingAssistant",
+    description="A smart scheduling and time zone coordinator",
+    persona=(
+        "You are a professional scheduling assistant. Help users coordinate "
+        "meetings across timezones, calculate time differences, and provide "
+        "clear time information. Always specify timezones when discussing times."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[datetime_tool] # [!code highlight]
+)
+
+# Schedule a global meeting
+response = agent.run(
+    "I need to schedule a meeting at 2 PM UTC on January 15th. "
+    "What time will this be in New York, London, and Tokyo?"
+)
+print(response)
+
+# Calculate meeting duration
+response = agent.run(
+    "If a meeting starts at 9:00 AM and ends at 5:30 PM, how many hours is that?"
+)
+print(response)
+```
+
+### Example 10: Batch Process Multiple Timezones
+
+```python
+from peargent.tools import datetime_tool
+
+# Get current time in multiple locations
+locations = {
+    "San Francisco": "America/Los_Angeles",
+    "New York": "America/New_York",
+    "London": "Europe/London",
+    "Dubai": "Asia/Dubai",
+    "Singapore": "Asia/Singapore",
+    "Sydney": "Australia/Sydney"
+}
+
+print("Current time in major cities:\n")
+
+for city, tz in locations.items():
+    result = datetime_tool.run({
+        "operation": "current",
+        "tz": tz,
+        "format_string": "%I:%M %p"
+    })
+
+    if result["success"]:
+        print(f"{city:15s}: {result['datetime']} ({result['components']['weekday']})")
+```
+
+## Parameters
+
+### Current Time Operation
+
+Parameters for `operation="current"` (or no operation parameter):
+
+- **operation** (string, optional, default: "current"): Operation type - use "current" or omit entirely
+- **tz** (string, optional, default: "UTC"): Timezone name (e.g., "America/New_York", "Europe/London", "Asia/Tokyo"). Use "local" for system local time
+- **format_string** (string, optional): Python strftime format string (e.g., "%Y-%m-%d %H:%M:%S", "%B %d, %Y"). If omitted, returns ISO format
+
+### Time Difference Operation
+
+Parameters for `operation="difference"`:
+
+- **operation** (string, required): Must be "difference"
+- **start_time** (string, required): Start datetime (ISO format, "YYYY-MM-DD", Unix timestamp, etc.)
+- **end_time** (string, optional): End datetime (same formats as start_time). If omitted, uses current time
+- **unit** (string, optional, default: "auto"): Unit for result - "seconds", "minutes", "hours", "days", "weeks", or "auto". Auto mode chooses the most appropriate unit
+
+### Parse and Format Operation
+
+Parameters for `operation="parse"`:
+
+- **operation** (string, required): Must be "parse"
+- **datetime_string** (string, required): Input datetime string to parse
+- **output_format** (string, optional): Python strftime format for output. If omitted, returns ISO format
+- **output_timezone** (string, optional): Timezone to convert to (e.g., "America/New_York"). If omitted, preserves original timezone
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+### For Current Time and Parse Operations
+
+```python
+{
+    "datetime": "2026-01-13T15:30:45.123456+00:00",  # Formatted datetime
+    "timezone": "UTC",  # Timezone name
+    "timestamp": 1736784645.123456,  # Unix timestamp
+    "iso_format": "2026-01-13T15:30:45.123456+00:00",  # ISO 8601 format
+    "components": {
+        "year": 2026,
+        "month": 1,
+        "day": 13,
+        "hour": 15,
+        "minute": 30,
+        "second": 45,
+        "microsecond": 123456,
+        "weekday": "Tuesday",
+        "weekday_number": 1  # 0=Monday, 6=Sunday
+    },
+    "success": True,
+    "error": None
+}
+```
+
+### For Time Difference Operation
+
+```python
+{
+    "difference": 12.0,  # Numeric difference in specified unit
+    "unit": "days",  # Unit of the difference
+    "total_seconds": 1036800.0,  # Total difference in seconds
+    "components": {
+        "days": 12,
+        "hours": 0,
+        "minutes": 0,
+        "seconds": 0
+    },
+    "human_readable": "12 days",  # Natural language description
+    "is_future": True,  # True if end_time is after start_time
+    "success": True,
+    "error": None
+}
+```
+
+## Supported Date Formats
+
+The DateTime tool can parse the following input formats:
+
+- **ISO 8601**: `2026-01-13T15:30:00Z`, `2026-01-13T15:30:00+05:00`
+- **Simple Date**: `2026-01-13`, `2026/01/13`
+- **Date with Time**: `2026-01-13 15:30:00`, `2026-01-13 15:30`
+- **Alternative Formats**: `13-01-2026`, `13/01/2026`
+- **Month Names**: `January 13, 2026`, `Jan 13, 2026 15:30:00`
+- **Unix Timestamp**: `1736784600` (integer or float)
+
+## Timezone Support
+
+The tool supports all IANA timezone names. Common examples:
+
+**Americas:**
+
+- `America/New_York` - Eastern Time
+- `America/Chicago` - Central Time
+- `America/Denver` - Mountain Time
+- `America/Los_Angeles` - Pacific Time
+- `America/Toronto` - Toronto
+- `America/Mexico_City` - Mexico City
+
+**Europe:**
+
+- `Europe/London` - London
+- `Europe/Paris` - Paris
+- `Europe/Berlin` - Berlin
+- `Europe/Rome` - Rome
+- `Europe/Moscow` - Moscow
+
+**Asia:**
+
+- `Asia/Tokyo` - Tokyo
+- `Asia/Shanghai` - Shanghai
+- `Asia/Dubai` - Dubai
+- `Asia/Singapore` - Singapore
+- `Asia/Kolkata` - India
+- `Asia/Hong_Kong` - Hong Kong
+
+**Pacific:**
+
+- `Australia/Sydney` - Sydney
+- `Australia/Melbourne` - Melbourne
+- `Pacific/Auckland` - Auckland
+
+See [IANA Time Zone Database](https://www.iana.org/time-zones) for a complete list.
+
+## Format String Patterns
+
+Common Python strftime format codes for custom formatting:
+
+**Date:**
+
+- `%Y` - Year (4 digits): 2026
+- `%y` - Year (2 digits): 26
+- `%m` - Month (01-12): 01
+- `%B` - Month name: January
+- `%b` - Month abbr: Jan
+- `%d` - Day (01-31): 13
+- `%A` - Weekday: Tuesday
+- `%a` - Weekday abbr: Tue
+
+**Time:**
+
+- `%H` - Hour 24h (00-23): 15
+- `%I` - Hour 12h (01-12): 03
+- `%M` - Minute (00-59): 30
+- `%S` - Second (00-59): 45
+- `%p` - AM/PM: PM
+
+**Examples:**
+
+- `%Y-%m-%d` → 2026-01-13
+- `%B %d, %Y` → January 13, 2026
+- `%I:%M %p` → 03:30 PM
+- `%A, %B %d, %Y at %I:%M %p` → Tuesday, January 13, 2026 at 03:30 PM
+
+## Best Practices
+
+1. **Always Check Success**: Verify `result["success"]` before using the data
+2. **Handle Timezones Explicitly**: Always specify timezones to avoid ambiguity
+3. **Use ISO Format for Storage**: Store dates in ISO format for consistency
+4. **Leverage Auto Unit Selection**: Use `unit="auto"` for time differences to get the most readable unit
+5. **Provide Timezone Context**: When using with agents, include timezone information in prompts
+6. **Handle Edge Cases**: Implement error handling for invalid dates and timezones
+7. **Use Human-Readable Output**: Display `human_readable` field for better user experience
+8. **Parse Flexibly**: The tool accepts many formats, but ISO 8601 is most reliable
+
+## Performance Considerations
+
+- All operations complete in milliseconds (no network calls required)
+- Timezone conversions are instant using zoneinfo
+- Date parsing tries multiple formats sequentially (ISO is fastest)
+- Large batch operations can be processed efficiently in loops
+
+## Troubleshooting
+
+### ImportError for tzdata
+
+If you encounter timezone errors on Windows:
+
+```bash
+pip install tzdata
+```
+
+Or install with Peargent:
+
+```bash
+pip install peargent[datetime]
+```
+
+### Invalid Timezone Error
+
+Ensure you use valid IANA timezone names:
+
+```python
+# Valid
+result = datetime_tool.run({"tz": "America/New_York"})
+
+# Invalid - will return error
+result = datetime_tool.run({"tz": "EST"})  # Use IANA names, not abbreviations
+```
+
+### Date Parsing Fails
+
+If date parsing fails, try using ISO 8601 format:
+
+```python
+# Try ISO format first
+result = datetime_tool.run({
+    "operation": "parse",
+    "datetime_string": "2026-01-13T15:30:00Z"
+})
+
+if not result["success"]:
+    print(f"Parse error: {result['error']}")
+```
+
+### Naive/Aware DateTime Mismatch
+
+Always include timezone information to avoid errors:
+
+```python
+# Good - includes timezone
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-01T00:00:00Z",
+    "end_time": "2026-12-31T23:59:59Z"
+})
+
+# May cause issues - no timezone
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-01",  # Ambiguous
+    "end_time": "2026-12-31"
+})
+```
+
+### Invalid Format String
+
+Verify your format string uses valid strftime codes:
+
+```python
+result = datetime_tool.run({
+    "operation": "current",
+    "format_string": "%Y-%m-%d %H:%M:%S"  # Valid
+})
+
+if not result["success"]:
+    print(f"Format error: {result['error']}")
+```
+
+### Time Difference Returns Unexpected Units
+
+Use explicit units if you need specific output:
+
+```python
+# Auto mode might return "weeks" for 12 days
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-01",
+    "end_time": "2026-01-13",
+    "unit": "auto"  # Returns "weeks"
+})
+
+# Force specific unit
+result = datetime_tool.run({
+    "operation": "difference",
+    "start_time": "2026-01-01",
+    "end_time": "2026-01-13",
+    "unit": "days"  # Returns 12 days
+})
+```
+
+<ContributorCredit
+  message="DateTime Tool contributed by"
+  username="Vivek13121"
+  link="https://github.com/Vivek13121"
+/>
