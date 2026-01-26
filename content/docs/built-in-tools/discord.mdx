@@ -1,0 +1,1086 @@
+---
+title: Discord Notifications
+description: Learn how to send Discord messages with Peargent agents
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Discord Notifications</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Learn how to send Discord messages with Peargent agents
+</h3>
+
+## Overview
+
+The Discord Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to send messages and rich embeds to Discord channels through webhooks. It supports template variable substitution (Jinja2 or simple `{variable}` replacement), rich embeds with fields, images, and formatting, custom usernames and avatars, and automatic webhook URL loading from environment variables.
+
+### Key Features
+
+- **Webhook Integration** - Send messages directly to Discord channels via webhooks
+- **Rich Embeds** - Create beautiful embedded messages with titles, descriptions, fields, images, and more
+- **Template Support** - Jinja2 templates (when available) or simple `{variable}` replacement
+- **Custom Branding** - Override webhook username and avatar per message
+- **Flexible Content** - Support for plain text, Markdown formatting, and code blocks
+- **Nested Templating** - Apply templates to content, embed titles, descriptions, and fields
+- **Error Handling** - Comprehensive error messages and rate limit detection
+- **Zero Configuration** - Automatic webhook URL loading from environment variables
+
+## Common Use Cases
+
+1. **System Alerts**: Notify teams about errors, performance issues, or critical events
+2. **Build Notifications**: Send CI/CD pipeline status updates with detailed results
+3. **Deployment Updates**: Announce successful deployments with version information
+4. **Monitoring Alerts**: Alert teams when metrics exceed thresholds
+5. **Daily Reports**: Automate summary reports and statistics
+6. **Bot Commands**: Create AI-powered Discord bots that respond contextually
+7. **GitHub Integration**: Send pull request, issue, and commit notifications
+8. **Server Status**: Share real-time server health and metrics
+
+## Usage with Agents
+
+The Discord **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically compose and send professional Discord messages based on context.
+
+### Creating an Agent with Discord Tool
+
+To use the Discord tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
+<Callout>
+  Before using the Discord tool, you must configure your Discord webhook URL in
+  your environment file. See
+  <u>[Configuration](/docs/built-in-tools/discord#configuration)</u> for setup instructions.
+</Callout>
+
+```python
+from peargent import create_agent
+from peargent.tools import discord_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an agent with Discord notification capability
+agent = create_agent(
+    name="DiscordAssistant",
+    description="A helpful assistant that sends Discord notifications",
+    persona=(
+        "You are a professional notification assistant. When asked to send Discord messages, "
+        "create clear, well-formatted content with appropriate embeds. Use rich formatting "
+        "when beneficial for readability. Always confirm successful delivery or report any "
+        "errors encountered."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[discord_tool] # [!code highlight]
+)
+
+# Use the agent to send a notification
+response = agent.run(
+    "Send a Discord message saying our deployment completed successfully. "
+    "Include details: version 2.0, duration 3 minutes, deployed by CI/CD."
+)
+print(response)
+```
+
+## Examples
+
+### Example 1: Basic Text Message
+
+```python
+from peargent.tools import discord_tool
+
+# Send a simple text message
+result = discord_tool.run({
+    "content": "Hello from Peargent! 🎉"
+})
+
+if result["success"]:
+    print("✅ Message sent successfully!")
+else:
+    print(f"❌ Error: {result['error']}")
+```
+
+### Example 2: Message with Simple Embed
+
+```python
+from peargent.tools import discord_tool
+
+# Send a message with a basic embed
+result = discord_tool.run({
+    "content": "System status update:",
+    "embed": { # [!code highlight]
+        "title": "System Alert",
+        "description": "All systems are operational.",
+        "color": 0x00FF00  # Green color
+    }
+})
+
+if result["success"]:
+    print("✅ Embed message sent successfully!")
+```
+
+### Example 3: Rich Embed with Fields
+
+```python
+from peargent.tools import discord_tool
+
+# Send a rich embed with multiple fields
+result = discord_tool.run({
+    "content": "📊 Server metrics:",
+    "embed": { # [!code highlight]
+        "title": "Server Status Report",
+        "description": "Current system metrics",
+        "color": 0x5865F2,  # Discord blurple
+        "fields": [ # [!code highlight]
+            {"name": "CPU Usage", "value": "45%", "inline": True},
+            {"name": "Memory", "value": "60%", "inline": True},
+            {"name": "Disk Space", "value": "75%", "inline": True},
+            {"name": "Uptime", "value": "99.9%", "inline": True}
+        ],
+        "footer": {"text": "Last updated: 2026-01-10"}
+    }
+})
+
+if result["success"]:
+    print("✅ Rich embed sent successfully!")
+```
+
+### Example 4: Template Variables
+
+```python
+from peargent.tools import discord_tool
+
+# Use template variables for dynamic content
+result = discord_tool.run({
+    "content": "Hello {{ name }}! Your task **{{ task }}** is now complete.", # [!code highlight]
+    "template_vars": { # [!code highlight]
+        "name": "Team",
+        "task": "Data Processing"
+    }
+})
+
+if result["success"]:
+    print("✅ Templated message sent successfully!")
+```
+
+### Example 5: Template Variables in Embeds
+
+```python
+from peargent.tools import discord_tool
+
+# Apply templates to both content and embed
+result = discord_tool.run({
+    "content": "Deployment to {{ environment }} completed!", # [!code highlight]
+    "template_vars": { # [!code highlight]
+        "environment": "Production",
+        "status": "Success",
+        "version": "v2.3.0",
+        "duration": "2m 45s",
+        "deployer": "CI/CD Pipeline"
+    },
+    "embed": {
+        "title": "Deployment Status: {{ status }}", # [!code highlight]
+        "description": "Version {{ version }} deployed successfully", # [!code highlight]
+        "color": 0x00FF00,  # Green for success
+        "fields": [
+            {"name": "Version", "value": "{{ version }}", "inline": True}, # [!code highlight]
+            {"name": "Duration", "value": "{{ duration }}", "inline": True}, # [!code highlight]
+            {"name": "Deployed By", "value": "{{ deployer }}", "inline": True} # [!code highlight]
+        ]
+    }
+})
+
+if result["success"]:
+    print("✅ Templated embed sent successfully!")
+```
+
+### Example 6: Custom Username and Avatar
+
+```python
+from peargent.tools import discord_tool
+
+# Override webhook username and avatar
+result = discord_tool.run({
+    "content": "Custom bot reporting for duty! 🤖",
+    "username": "Peargent Bot", # [!code highlight]
+    "avatar_url": "https://example.com/avatar.png" # [!code highlight]
+})
+
+if result["success"]:
+    print("✅ Custom message sent successfully!")
+```
+
+### Example 7: Embed with Image and Thumbnail
+
+```python
+from peargent.tools import discord_tool
+
+# Send embed with image and thumbnail
+result = discord_tool.run({
+    "content": "🖼️ Image showcase:",
+    "embed": {
+        "title": "Image Showcase",
+        "description": "Check out this beautiful image!",
+        "color": 0xFF5733,  # Orange
+        "image": {"url": "https://example.com/large-image.png"}, # [!code highlight]
+        "thumbnail": {"url": "https://example.com/thumbnail.png"} # [!code highlight]
+    }
+})
+
+if result["success"]:
+    print("✅ Embed with image sent successfully!")
+```
+
+### Example 8: Alert with Timestamp and Footer
+
+```python
+from peargent.tools import discord_tool
+from datetime import datetime, timezone
+
+# Send alert with timestamp
+result = discord_tool.run({
+    "content": "**URGENT: System Alert**",
+    "embed": {
+        "title": "⚠️ High CPU Usage Detected",
+        "description": "Server CPU usage has exceeded 90% threshold",
+        "color": 0xFFCC00,  # Yellow/amber for warning
+        "fields": [
+            {"name": "Server", "value": "prod-server-01", "inline": True},
+            {"name": "Current Usage", "value": "94%", "inline": True},
+            {"name": "Threshold", "value": "90%", "inline": True},
+            {"name": "Recommendation", "value": "Scale up resources or investigate processes", "inline": False}
+        ],
+        "footer": {"text": "Monitoring System"}, # [!code highlight]
+        "timestamp": datetime.now(timezone.utc).isoformat() # [!code highlight]
+    }
+})
+
+if result["success"]:
+    print("🚨 Alert notification sent successfully!")
+```
+
+### Example 9: GitHub Pull Request Notification
+
+```python
+from peargent.tools import discord_tool
+from datetime import datetime, timezone
+
+# Send GitHub-style notification
+result = discord_tool.run({
+    "content": "New GitHub activity:",
+    "embed": {
+        "title": "GitHub Pull Request",
+        "description": "A new pull request has been opened",
+        "url": "https://github.com/user/repo/pull/123", # [!code highlight]
+        "color": 0x238636,  # GitHub green
+        "author": { # [!code highlight]
+            "name": "GitHub Bot",
+            "url": "https://github.com",
+            "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        },
+        "fields": [
+            {"name": "Repository", "value": "user/awesome-project", "inline": True},
+            {"name": "Branch", "value": "feature/new-tool", "inline": True},
+            {"name": "Author", "value": "developer123", "inline": True},
+            {"name": "Status", "value": "✅ All checks passed", "inline": False},
+            {"name": "Changes", "value": "+150 -20", "inline": True},
+            {"name": "Files Changed", "value": "5", "inline": True}
+        ],
+        "footer": {
+            "text": "GitHub Notifications",
+            "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+})
+
+if result["success"]:
+    print("✅ GitHub notification sent successfully!")
+```
+
+### Example 10: Build Success Notification
+
+```python
+from peargent.tools import discord_tool
+
+# Send build success notification with details
+result = discord_tool.run({
+    "content": "Build completed!",
+    "embed": {
+        "title": "✅ Build Successful",
+        "description": "All tests passed and deployment completed",
+        "color": 0x00FF00,  # Green
+        "fields": [
+            {"name": "Build #", "value": "1234", "inline": True},
+            {"name": "Branch", "value": "main", "inline": True},
+            {"name": "Commit", "value": "`abc123f`", "inline": True},
+            {"name": "Tests", "value": "✅ 150 passed\n⏭️ 0 skipped\n❌ 0 failed", "inline": False}, # [!code highlight]
+            {"name": "Coverage", "value": "95%", "inline": True},
+            {"name": "Build Time", "value": "3m 22s", "inline": True}
+        ],
+        "thumbnail": {"url": "https://example.com/success-icon.png"}
+    }
+})
+
+if result["success"]:
+    print("✅ Success notification sent successfully!")
+```
+
+### Example 11: Message with Code Block
+
+```python
+from peargent.tools import discord_tool
+
+# Send error report with code block
+result = discord_tool.run({
+    "content": """**Error Report**
+
+\`\`\`python
+def process_data(data):
+    # Error occurred here
+    result = data.transform()
+    return result
+\`\`\`
+
+**Error:** `AttributeError: 'NoneType' object has no attribute 'transform'`
+**Line:** 3
+**Time:** 2026-01-10 10:30:00 UTC""",
+    "embed": {
+        "title": "Stack Trace",
+        "description": "Full error details",
+        "color": 0xFF0000  # Red for error
+    }
+})
+
+if result["success"]:
+    print("✅ Error report sent successfully!")
+```
+
+### Example 12: Jinja2 Conditionals
+
+```python
+from peargent.tools import discord_tool
+
+# Use Jinja2 conditionals (requires Jinja2 installed)
+result = discord_tool.run({
+    "content": "{% if severity == 'critical' %}🚨 CRITICAL: {% endif %}System {{ status }}", # [!code highlight]
+    "template_vars": { # [!code highlight]
+        "severity": "critical",
+        "status": "down"
+    },
+    "embed": {
+        "title": "System Status Alert",
+        "color": 0xFF0000
+    }
+})
+
+if result["success"]:
+    print("✅ Conditional message sent successfully!")
+```
+
+### Example 13: Jinja2 Loops
+
+```python
+from peargent.tools import discord_tool
+
+# Use Jinja2 loops (requires Jinja2 installed)
+result = discord_tool.run({
+    "content": "Daily Report Summary",
+    "embed": {
+        "title": "Daily Report",
+        "description": """**Completed Tasks:**
+{% for task in tasks %}
+- {{ task.name }}: {{ task.status }}
+{% endfor %}""", # [!code highlight]
+        "color": 0x5865F2
+    },
+    "template_vars": { # [!code highlight]
+        "tasks": [
+            {"name": "Data backup", "status": "✅ Success"},
+            {"name": "Log cleanup", "status": "✅ Success"},
+            {"name": "Health check", "status": "✅ Success"}
+        ]
+    }
+})
+
+if result["success"]:
+    print("✅ Looped template sent successfully!")
+```
+
+### Example 14: Agent-Driven Notifications
+
+```python
+from peargent import create_agent
+from peargent.tools import discord_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an intelligent Discord notification agent
+agent = create_agent(
+    name="DevOpsNotifier",
+    description="A DevOps notification assistant",
+    persona="""
+You are a DevOps notification assistant. When asked to send notifications:
+1. Create well-formatted Discord messages with appropriate embeds
+2. Use colors based on severity: green=success, yellow=warning, red=error
+3. Structure information clearly in embed fields
+4. Include relevant emojis for visual clarity
+5. Add timestamps for time-sensitive alerts
+Always use the discord_tool to send messages.
+    """,
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[discord_tool] # [!code highlight]
+)
+
+# Scenario 1: Database backup notification
+print("Scenario 1: Database Backup")
+print("-" * 60)
+response = agent.run(
+    "Send a Discord notification that the database backup completed successfully. "
+    "Include details: database name 'prod-db', size '2.5 GB', duration '5 minutes', "
+    "next backup scheduled for '2026-01-11 02:00 UTC'."
+)
+print(f"Agent Response: {response}\n")
+
+# Scenario 2: Deployment alert
+print("Scenario 2: Deployment Alert")
+print("-" * 60)
+response = agent.run(
+    "Notify the team that deployment to production has started. "
+    "Version v3.2.0, deploying from main branch, commit hash: abc123f. "
+    "Estimated duration: 5 minutes."
+)
+print(f"Agent Response: {response}\n")
+
+# Scenario 3: Error notification
+print("Scenario 3: Error Alert")
+print("-" * 60)
+response = agent.run(
+    "Send an urgent alert about high memory usage on web-server-02. "
+    "Current usage: 95%, threshold: 85%. Immediate action required."
+)
+print(f"Agent Response: {response}")
+```
+
+### Example 15: Batch Notifications
+
+```python
+from peargent.tools import discord_tool
+
+# Send multiple notifications with different content
+notifications = [
+    {
+        "type": "success",
+        "title": "Backup Complete",
+        "description": "Database backup completed successfully",
+        "color": 0x00FF00
+    },
+    {
+        "type": "warning",
+        "title": "High CPU Usage",
+        "description": "CPU usage exceeded 80% threshold",
+        "color": 0xFFCC00
+    },
+    {
+        "type": "info",
+        "title": "Maintenance Scheduled",
+        "description": "Server maintenance scheduled for tonight",
+        "color": 0x5865F2
+    }
+]
+
+print("Sending batch notifications:\n")
+
+for notification in notifications:
+    result = discord_tool.run({
+        "content": f"**{notification['type'].upper()}**",
+        "embed": {
+            "title": notification["title"],
+            "description": notification["description"],
+            "color": notification["color"]
+        }
+    })
+
+    if result["success"]:
+        print(f"✅ {notification['title']} sent")
+    else:
+        print(f"❌ Failed to send {notification['title']}: {result['error']}")
+```
+
+### Example 16: Error Handling
+
+```python
+from peargent.tools import discord_tool
+import time
+
+# Comprehensive error handling with retry logic
+def send_with_retry(config, max_retries=3, delay=2):
+    """Send Discord message with retry logic."""
+    for attempt in range(max_retries):
+        result = discord_tool.run(config)
+
+        if result["success"]:
+            print(f"✅ Message sent successfully on attempt {attempt + 1}")
+            return result
+        else:
+            print(f"❌ Attempt {attempt + 1} failed: {result['error']}")
+
+            # Check for specific errors
+            if "rate limited" in result['error'].lower():
+                print("Rate limited - waiting before retry")
+                time.sleep(delay * 2)  # Wait longer for rate limits
+            elif "invalid" in result['error'].lower() and "webhook" in result['error'].lower():
+                print("Invalid webhook URL - check configuration")
+                break
+            elif attempt < max_retries - 1:
+                print(f"Retrying... ({attempt + 2}/{max_retries})")
+                time.sleep(delay)
+
+    return result
+
+# Use the retry function
+result = send_with_retry({
+    "content": "Testing error handling and retry logic.",
+    "embed": {
+        "title": "Test Message",
+        "description": "This is a test",
+        "color": 0x5865F2
+    }
+})
+```
+
+## Parameters
+
+The Discord tool accepts the following parameters:
+
+- **content** (string, optional): Message content (plain text with Markdown support). Either `content` or `embed` is required. Supports template variables when `template_vars` is provided
+- **webhook_url** (string, optional): Discord webhook URL. If not provided, loaded from `DISCORD_WEBHOOK_URL` environment variable. Format: `https://discord.com/api/webhooks/ID/TOKEN`
+- **template_vars** (dictionary, optional): Variables for template substitution. If provided, applies Jinja2 templating (if available) or simple `{variable}` replacement to content and all embed fields
+- **username** (string, optional): Override webhook username for this message
+- **avatar_url** (string, optional): Override webhook avatar URL for this message
+- **embed** (dictionary, optional): Single embed object. Either `content` or `embed` is required. Can include:
+  - **title** (string): Embed title
+  - **description** (string): Embed description
+  - **color** (integer): Color code as decimal integer (e.g., `0x5865F2` or `5793522`)
+  - **url** (string): URL for title hyperlink
+  - **fields** (list): List of field objects with:
+    - **name** (string, required): Field name
+    - **value** (string, required): Field value
+    - **inline** (boolean, optional): Display inline (default: `False`)
+  - **footer** (dictionary): Footer object with:
+    - **text** (string, required): Footer text
+    - **icon_url** (string, optional): Footer icon URL
+  - **image** (dictionary): Large image object with:
+    - **url** (string, required): Image URL
+  - **thumbnail** (dictionary): Thumbnail object with:
+    - **url** (string, required): Thumbnail URL
+  - **author** (dictionary): Author object with:
+    - **name** (string, required): Author name
+    - **url** (string, optional): Author URL
+    - **icon_url** (string, optional): Author icon URL
+  - **timestamp** (string): ISO 8601 timestamp string (e.g., `2026-01-10T10:30:00Z`)
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+```python
+{
+    "success": True,  # Boolean indicating success/failure
+    "error": None  # Error message if failed, None otherwise
+}
+```
+
+### Success Response Example
+
+```python
+{
+    "success": True,
+    "error": None
+}
+```
+
+### Error Response Example
+
+```python
+{
+    "success": False,
+    "error": "Discord API error: Invalid webhook token"
+}
+```
+
+## Configuration
+
+### Webhook Setup
+
+To use the Discord tool, you need to create a webhook in your Discord server:
+
+#### Creating a Discord Webhook
+
+1. **Open Discord Server Settings**
+
+   - Open Discord and navigate to your server
+   - Right-click on the server name and select "Server Settings"
+
+2. **Navigate to Integrations**
+
+   - In the left sidebar, click on "Integrations"
+
+3. **Create Webhook**
+
+   - Click "Create Webhook" or "View Webhooks"
+   - Click "New Webhook"
+
+4. **Configure Webhook**
+
+   - Set a name for your webhook (e.g., "Peargent Bot")
+   - Choose the channel where messages will be sent
+   - Optionally upload an avatar image
+
+5. **Copy Webhook URL**
+
+   - Click "Copy Webhook URL"
+   - The URL format is: `https://discord.com/api/webhooks/ID/TOKEN`
+
+6. **Add to Environment Variables**
+   - Create or edit your `.env` file
+   - Add the webhook URL:
+
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
+```
+
+### Environment Variable Configuration
+
+Set this environment variable in your `.env` file:
+
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz123456789
+```
+
+**Note**: The webhook URL is loaded automatically from the environment variable. You can also pass it directly to the tool using the `webhook_url` parameter.
+
+### Multiple Webhooks
+
+To send messages to different channels, use multiple webhook URLs:
+
+```python
+from peargent.tools import discord_tool
+
+# Send to alerts channel
+result = discord_tool.run({
+    "content": "🚨 Critical alert!",
+    "webhook_url": "https://discord.com/api/webhooks/ID1/TOKEN1" # [!code highlight]
+})
+
+# Send to general channel
+result = discord_tool.run({
+    "content": "📢 General announcement",
+    "webhook_url": "https://discord.com/api/webhooks/ID2/TOKEN2" # [!code highlight]
+})
+```
+
+## Template Systems
+
+### Jinja2 Templating (Recommended)
+
+When Jinja2 is installed, you get full template power:
+
+```python
+# Install Jinja2
+pip install jinja2
+
+# Use advanced features
+result = discord_tool.run({
+    "content": "Deployment Report",
+    "embed": {
+        "title": "Deployment: {{ deployment.name }}",
+        "description": """
+{% if deployment.success %}
+✅ Deployment completed successfully!
+{% else %}
+❌ Deployment failed!
+{% endif %}
+
+**Details:**
+{% for step in deployment.steps %}
+- {{ step.name }}: {{ step.status }}
+{% endfor %}
+        """,
+        "color": "{{ deployment.color }}",
+        "fields": [
+            {"name": "Version", "value": "{{ deployment.version }}", "inline": True},
+            {"name": "Environment", "value": "{{ deployment.environment }}", "inline": True}
+        ]
+    },
+    "template_vars": {
+        "deployment": {
+            "name": "Web App v2.0",
+            "success": True,
+            "color": "5793522",  # Will be used as integer
+            "version": "v2.0.0",
+            "environment": "Production",
+            "steps": [
+                {"name": "Build", "status": "✅ Success"},
+                {"name": "Test", "status": "✅ Success"},
+                {"name": "Deploy", "status": "✅ Success"}
+            ]
+        }
+    }
+})
+```
+
+### Simple Templating (Fallback)
+
+Without Jinja2, use simple `{variable}` syntax:
+
+```python
+# Works without Jinja2 installation
+result = discord_tool.run({
+    "content": "Hello {name}! Build {build_id} is {status}.",
+    "template_vars": {
+        "name": "Team",
+        "build_id": "1234",
+        "status": "complete"
+    },
+    "embed": {
+        "title": "Build {build_id}",
+        "description": "Status: {status}",
+        "color": 0x00FF00
+    }
+})
+```
+
+### Without Templates
+
+To send messages without variable substitution:
+
+```python
+# Omit template_vars to send content as-is
+result = discord_tool.run({
+    "content": "This {{ variable }} syntax is sent literally, not replaced.",
+    "embed": {
+        "title": "Static content with {{ literal }} brackets",
+        "color": 0x5865F2
+    }
+    # No template_vars parameter
+})
+```
+
+## Discord Markdown Formatting
+
+Discord supports Markdown formatting in message content and embed descriptions:
+
+### Text Formatting
+
+- **Bold**: `**bold text**` or `__bold text__`
+- _Italic_: `*italic text*` or `_italic text_`
+- **_Bold Italic_**: `***bold italic***`
+- ~~Strikethrough~~: `~~strikethrough~~`
+- `Code`: `` `code` ``
+- Code block: ` ```language\ncode\n``` `
+- Spoiler: `||spoiler text||`
+- Quote: `> quoted text`
+- Block quote: `>>> multi-line quote`
+
+### Links and Mentions
+
+- Link: `[text](https://example.com)`
+- User mention: `<@USER_ID>`
+- Channel mention: `<#CHANNEL_ID>`
+- Role mention: `<@&ROLE_ID>`
+
+### Lists and Headers
+
+- Headers: `# H1`, `## H2`, `### H3`
+- Unordered list: `- item` or `* item`
+- Ordered list: `1. item`
+
+### Example with Formatting
+
+```python
+from peargent.tools import discord_tool
+
+result = discord_tool.run({
+    "content": """
+**Deployment Complete!**
+
+Version: `v2.0.0`
+Environment: **Production**
+Status: ~~In Progress~~ **Complete** ✅
+
+\`\`\`bash
+npm run deploy --env=production
+\`\`\`
+
+> All systems operational
+    """
+})
+```
+
+## Color Reference
+
+Common Discord embed colors:
+
+```python
+# Success / Online
+0x00FF00  # Green
+
+# Warning / Idle
+0xFFCC00  # Yellow/Amber
+
+# Error / Do Not Disturb
+0xFF0000  # Red
+
+# Info / Streaming
+0x9B59B6  # Purple
+
+# Discord Branding
+0x5865F2  # Discord Blurple
+0x57F287  # Discord Green
+0xFEE75C  # Discord Yellow
+0xED4245  # Discord Red
+
+# Status Colors
+0x2ECC71  # Online Green
+0xE67E22  # Idle Orange
+0xE74C3C  # DND Red
+0x95A5A6  # Offline Gray
+
+# GitHub Colors
+0x238636  # GitHub Green
+0xDA3633  # GitHub Red
+```
+
+## Best Practices
+
+1. **Use Environment Variables**: Store webhook URLs in `.env` files, never hardcode them
+2. **Validate Before Sending**: Ensure either `content` or `embed` is provided
+3. **Handle Errors Gracefully**: Always check `result["success"]` and implement retry logic
+4. **Use Embeds for Rich Content**: Leverage embeds for structured, visual information
+5. **Color Code by Severity**: Use green for success, yellow for warnings, red for errors
+6. **Include Timestamps**: Add timestamps to time-sensitive notifications
+7. **Template for Personalization**: Use template variables for dynamic content
+8. **Limit Field Count**: Discord allows up to 25 fields per embed
+9. **Respect Rate Limits**: Implement delays between batch notifications
+10. **Use Inline Fields**: Set `inline: True` for compact field layouts (max 3 per row)
+11. **Add Context with Footers**: Use footers to indicate the source or system
+12. **Professional Formatting**: Use emojis sparingly and maintain consistent formatting
+
+## Embed Limits
+
+Discord enforces the following limits on embeds:
+
+- **Embed title**: 256 characters
+- **Embed description**: 4096 characters
+- **Number of fields**: 25 fields maximum
+- **Field name**: 256 characters
+- **Field value**: 1024 characters
+- **Footer text**: 2048 characters
+- **Author name**: 256 characters
+- **Total characters**: 6000 characters across all embed properties
+- **Embeds per message**: 1 embed (via webhook)
+
+## Performance Considerations
+
+- Discord webhook requests typically complete in 500ms - 2 seconds
+- Template rendering adds minimal overhead (< 100ms for most templates)
+- Embed validation is performed client-side (instant)
+- Rate limits: ~5 requests per 2 seconds per webhook (30 requests per minute)
+- Implement delays for batch notifications to avoid rate limiting
+
+## Troubleshooting
+
+### Invalid Webhook URL
+
+**Error**: `Invalid Discord webhook URL format. Expected: https://discord.com/api/webhooks/ID/TOKEN`
+
+**Solutions**:
+
+- Verify webhook URL format is correct
+- Ensure URL starts with `https://discord.com/api/webhooks/`
+- Check for typos or missing characters
+- Copy webhook URL directly from Discord settings
+
+```bash
+# Correct format
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz
+```
+
+### Missing Webhook URL
+
+**Error**: `Discord webhook URL is required. Set DISCORD_WEBHOOK_URL in .env file or provide webhook_url parameter.`
+
+**Solutions**:
+
+- Create a `.env` file in your project root
+- Add `DISCORD_WEBHOOK_URL` with your webhook URL
+- Or pass `webhook_url` parameter directly to the tool
+
+```bash
+# Create .env file
+touch .env
+
+# Add webhook URL
+echo "DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN" >> .env
+```
+
+### Discord API Error
+
+**Error**: `Discord API error: Invalid webhook token`
+
+**Solutions**:
+
+- Verify webhook URL is correct and hasn't been regenerated
+- Check if webhook was deleted from Discord server
+- Ensure you have "Manage Webhooks" permission in the channel
+- Try creating a new webhook
+
+### Rate Limiting
+
+**Error**: `Rate limited by Discord API. Retry after 2.5 seconds.`
+
+**Solutions**:
+
+- Implement delays between messages (recommended: 500ms - 1 second)
+- Use retry logic with exponential backoff
+- Reduce message frequency
+- Consider using multiple webhooks for different channels
+
+```python
+import time
+
+# Add delay between messages
+for notification in notifications:
+    result = discord_tool.run(notification)
+    time.sleep(1)  # Wait 1 second between messages
+```
+
+### Empty Message Error
+
+**Error**: `Either 'content' or 'embed' parameter is required.`
+
+**Solutions**:
+
+- Provide at least one of `content` or `embed`
+- Ensure parameters are not empty strings or None
+
+```python
+# Correct usage - content only
+result = discord_tool.run({"content": "Hello!"})
+
+# Correct usage - embed only
+result = discord_tool.run({"embed": {"title": "Alert", "color": 0x00FF00}})
+
+# Correct usage - both
+result = discord_tool.run({
+    "content": "Message",
+    "embed": {"title": "Embed"}
+})
+```
+
+### Template Rendering Issues
+
+**Problem**: Variables not being replaced
+
+**Solutions**:
+
+- Ensure `template_vars` dictionary is provided
+- For Jinja2: Use `{{ variable }}` syntax
+- For simple: Use `{variable}` syntax
+- Verify variable names match exactly (case-sensitive)
+
+```python
+# Correct usage
+result = discord_tool.run({
+    "content": "Hello {{ name }}!",  # or "Hello {name}!"
+    "template_vars": {"name": "Team"},  # Must provide template_vars
+    "embed": {...}
+})
+```
+
+### Missing Requests Library
+
+**Error**: `requests library is required for Discord webhooks. Install it with: pip install requests`
+
+**Solutions**:
+
+- Install the requests library:
+
+```bash
+pip install requests
+```
+
+### Network Timeout
+
+**Error**: `Request timed out. Please try again.`
+
+**Solutions**:
+
+- Check your internet connection
+- Verify Discord is accessible (not blocked by firewall)
+- Try again after a few seconds
+- Implement retry logic for critical messages
+
+```python
+import time
+
+def send_with_retry(config, max_attempts=3):
+    for attempt in range(max_attempts):
+        result = discord_tool.run(config)
+        if result["success"]:
+            return result
+        if attempt < max_attempts - 1:
+            time.sleep(2)
+    return result
+```
+
+### Embed Not Displaying Properly
+
+**Problem**: Embed appears broken or missing fields
+
+**Solutions**:
+
+- Verify embed structure follows Discord's format
+- Check field names and values are not empty
+- Ensure color is a valid integer (not string)
+- Verify URLs are valid and accessible
+- Check character limits for each embed property
+
+```python
+# Correct embed structure
+embed = {
+    "title": "Title",
+    "description": "Description",
+    "color": 0x5865F2,  # Integer, not string
+    "fields": [
+        {"name": "Field 1", "value": "Value 1", "inline": True}
+    ],
+    "footer": {"text": "Footer"}
+}
+```
+
+## Security Considerations
+
+1. **Never Commit Webhook URLs**: Add `.env` to `.gitignore`
+2. **Regenerate Compromised Webhooks**: If webhook URL is exposed, regenerate it immediately
+3. **Validate Input**: Sanitize user input before sending to Discord
+4. **Rate Limiting**: Implement rate limiting to prevent abuse
+5. **Access Control**: Restrict who can trigger Discord notifications
+6. **Audit Logging**: Log notification activities for security auditing
+7. **Webhook Permissions**: Use appropriate Discord channel permissions
+
+## Dependencies
+
+The Discord tool has minimal dependencies:
+
+```bash
+# Core dependency
+pip install requests  # For webhook HTTP requests
+
+# Optional dependency
+pip install jinja2    # For advanced templating
+
+# Or install with Peargent extras
+pip install peargent[discord]  # Includes requests and jinja2
+```
+
+<ContributorCredit
+  message="Discord Tool contributed by"
+  username="Vivek13121"
+  link="https://github.com/Vivek13121"
+/>

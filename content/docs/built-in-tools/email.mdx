@@ -1,0 +1,912 @@
+---
+title: Email Notifications
+description: Learn how to send email notifications with Peargent agents
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Email Notifications</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Learn how to send email notifications with Peargent agents
+</h3>
+
+## Overview
+
+The Email Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to send email notifications through SMTP or Resend API. It supports template variable substitution (Jinja2 or simple `{variable}` replacement), plain text and HTML emails, automatic format detection, and multi-provider support with intelligent fallback.
+
+### Key Features
+
+- **Multiple Providers** - Send via SMTP (Gmail, Outlook, custom servers) or Resend API
+- **Template Support** - Jinja2 templates (when available) or simple `{variable}` replacement
+- **HTML & Plain Text** - Automatic detection and handling of both formats
+- **Auto-Provider Selection** - Intelligent fallback based on available credentials
+- **Email Validation** - Built-in validation for sender and recipient addresses
+- **Error Handling** - Comprehensive error messages and troubleshooting guidance
+- **Secure Authentication** - TLS/SSL support for SMTP connections
+
+## Common Use Cases
+
+1. **User Notifications**: Send welcome emails, password resets, and account updates
+2. **System Alerts**: Notify teams about errors, performance issues, or system events
+3. **Transactional Emails**: Send receipts, invoices, and order confirmations
+4. **Daily Reports**: Automate summary reports and analytics emails
+5. **Event Reminders**: Send meeting reminders and calendar notifications
+6. **Marketing Campaigns**: Deliver newsletters and promotional content
+7. **Agent-Driven Automation**: Let AI agents send contextual emails based on user requests
+8. **Multi-Language Support**: Send localized emails with template variables
+
+## Usage with Agents
+
+The Email **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically compose and send professional emails based on context.
+
+### Creating an Agent with Email Tool
+
+To use the Email tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
+<Callout>
+  Before using the Email tool, you must configure your SMTP or Resend
+  credentials in your environment file. See 
+  <u>[Configuration](/docs/built-in-tools/email#configuration)</u> for setup
+  instructions.
+</Callout>
+
+```python
+from peargent import create_agent
+from peargent.tools import email_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an agent with email notification capability
+agent = create_agent(
+    name="NotificationAssistant",
+    description="A helpful assistant that sends email notifications",
+    persona=(
+        "You are a professional notification assistant. When asked to send emails, "
+        "craft clear, professional subject lines and well-formatted email bodies. "
+        "Use HTML formatting when beneficial for readability. Always confirm "
+        "successful delivery or report any errors encountered."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[email_tool] # [!code highlight]
+)
+
+# Use the agent to send a notification
+response = agent.run(
+    "Send a welcome email to alice@example.com. "
+    "Use welcome@company.com as the sender."
+)
+print(response)
+```
+
+## Examples
+
+### Example 1: Basic Email (SMTP)
+
+```python
+from peargent.tools import email_tool
+
+# Send a basic plain text email via SMTP
+result = email_tool.run({
+    "to_email": "user@example.com",
+    "subject": "Welcome to Our Platform",
+    "body": "Thank you for joining! We're excited to have you on board.",
+    "from_email": "noreply@company.com"
+})
+
+if result["success"]:
+    print(f"✅ Email sent successfully!")
+    print(f"Provider: {result['provider']}")
+    if result['message_id']:
+        print(f"Message ID: {result['message_id']}")
+else:
+    print(f"❌ Error: {result['error']}")
+```
+
+### Example 2: HTML Email
+
+```python
+from peargent.tools import email_tool
+
+# Send an HTML email with rich formatting
+html_body = """
+<html>
+<body style="font-family: Arial, sans-serif;">
+    <h2 style="color: #4CAF50;">Welcome to Our Platform!</h2>
+    <p>Thank you for creating your account.</p>
+    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+        <p><strong>Next Steps:</strong></p>
+        <ol>
+            <li>Complete your profile</li>
+            <li>Explore our features</li>
+            <li>Join our community</li>
+        </ol>
+    </div>
+    <p>
+        <a href="https://app.example.com/dashboard"
+           style="background-color: #4CAF50; color: white; padding: 12px 24px;
+                  text-decoration: none; border-radius: 5px; display: inline-block;">
+            Get Started
+        </a>
+    </p>
+</body>
+</html>
+"""
+
+result = email_tool.run({
+    "to_email": "user@example.com",
+    "subject": "Welcome to Our Platform",
+    "body": html_body, # [!code highlight]
+    "from_email": "welcome@company.com"
+})
+
+if result["success"]:
+    print("✅ HTML email sent successfully!")
+```
+
+### Example 3: Template Variables with Jinja2
+
+```python
+from peargent.tools import email_tool
+
+# Use Jinja2 template syntax for dynamic content
+result = email_tool.run({
+    "to_email": "alice@example.com",
+    "subject": "Welcome {{ first_name }} {{ last_name }}!", # [!code highlight]
+    "body": """
+Hello {{ first_name }},
+
+Your account has been successfully created!
+
+Account Details:
+- Username: {{ username }}
+- Email: {{ email }}
+- Member Since: {{ join_date }}
+
+Click here to activate your account:
+{{ activation_link }}
+
+Best regards,
+The {{ company_name }} Team
+    """,
+    "template_vars": { # [!code highlight]
+        "first_name": "Alice",
+        "last_name": "Johnson",
+        "username": "alice_j",
+        "email": "alice@example.com",
+        "join_date": "January 6, 2026",
+        "activation_link": "https://app.example.com/activate/abc123",
+        "company_name": "Tech Corp"
+    },
+    "from_email": "noreply@techcorp.com"
+})
+
+if result["success"]:
+    print("✅ Templated email sent successfully!")
+```
+
+### Example 4: Simple Template (Without Jinja2)
+
+```python
+from peargent.tools import email_tool
+
+# If Jinja2 is not installed, use simple {variable} syntax
+result = email_tool.run({
+    "to_email": "bob@example.com",
+    "subject": "Hello {name}!", # [!code highlight]
+    "body": "Welcome {name}! Your order #{order_id} has been confirmed.",
+    "template_vars": { # [!code highlight]
+        "name": "Bob",
+        "order_id": "12345"
+    },
+    "from_email": "orders@shop.com"
+})
+
+if result["success"]:
+    print("✅ Simple template email sent!")
+```
+
+### Example 5: Resend Provider
+
+```python
+from peargent.tools import email_tool
+
+# Send via Resend API instead of SMTP
+result = email_tool.run({
+    "to_email": "customer@example.com",
+    "subject": "Your order has shipped!",
+    "body": """
+<html>
+<body>
+    <h2>📦 Your Order Has Shipped!</h2>
+    <p>Great news! Your order is on its way.</p>
+    <p><strong>Tracking Number:</strong> 1Z999AA10123456784</p>
+    <p>
+        <a href="https://tracking.example.com/track">Track Your Package</a>
+    </p>
+</body>
+</html>
+    """,
+    "from_email": "test@resend.dev", # Use test@resend.dev for testing
+    "provider": "resend" # [!code highlight]
+})
+
+if result["success"]:
+    print(f"✅ Email sent via Resend!")
+    print(f"Message ID: {result['message_id']}")
+```
+
+### Example 6: Alert Email with Template
+
+```python
+from peargent.tools import email_tool
+
+# Send system alert with metrics
+alert_data = {
+    "alert_type": "High CPU Usage",
+    "server_name": "web-server-01",
+    "cpu_percent": "95",
+    "memory_percent": "78",
+    "timestamp": "2026-01-06 14:30:00",
+    "threshold": "80",
+    "dashboard_url": "https://monitoring.example.com/servers/web-01"
+}
+
+result = email_tool.run({
+    "to_email": "devops@example.com",
+    "subject": "⚠️ Alert: {{ alert_type }} on {{ server_name }}", # [!code highlight]
+    "body": """
+Alert Type: {{ alert_type }}
+Server: {{ server_name }}
+Time: {{ timestamp }}
+
+Current Metrics:
+- CPU Usage: {{ cpu_percent }}% (Threshold: {{ threshold }}%)
+- Memory Usage: {{ memory_percent }}%
+
+Action Required: Please investigate immediately.
+
+View dashboard: {{ dashboard_url }}
+
+This is an automated alert from the monitoring system.
+    """,
+    "template_vars": alert_data, # [!code highlight]
+    "from_email": "alerts@company.com"
+})
+
+if result["success"]:
+    print("🚨 Alert email sent to DevOps team!")
+```
+
+### Example 7: Invoice Email with Rich HTML
+
+```python
+from peargent.tools import email_tool
+
+# Send styled invoice email
+invoice_data = {
+    "customer_name": "John Doe",
+    "invoice_number": "INV-2026-001",
+    "invoice_date": "January 6, 2026",
+    "amount": "$149.99",
+    "payment_method": "Credit Card (****1234)",
+    "items": "Premium Plan - Annual Subscription",
+    "next_billing_date": "January 6, 2027",
+    "invoice_url": "https://billing.example.com/invoices/001"
+}
+
+result = email_tool.run({
+    "to_email": "john@example.com",
+    "subject": "Invoice {{ invoice_number }} - Payment Received", # [!code highlight]
+    "body": """
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #4CAF50;">✅ Thank you for your payment!</h2>
+
+    <p>Dear {{ customer_name }},</p>
+
+    <p>We have received your payment of <strong>{{ amount }}</strong>.</p>
+
+    <h3>Invoice Details:</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Invoice Number:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ invoice_number }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ invoice_date }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ amount }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Method:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ payment_method }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Items:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{{ items }}</td>
+        </tr>
+    </table>
+
+    <p>Next billing date: <strong>{{ next_billing_date }}</strong></p>
+
+    <p>
+        <a href="{{ invoice_url }}"
+           style="background-color: #2196F3; color: white; padding: 10px 20px;
+                  text-decoration: none; border-radius: 5px; display: inline-block;">
+            Download Invoice PDF
+        </a>
+    </p>
+
+    <p>Thank you for your business!</p>
+</body>
+</html>
+    """,
+    "template_vars": invoice_data, # [!code highlight]
+    "from_email": "billing@example.com"
+})
+
+if result["success"]:
+    print("📄 Invoice email sent!")
+```
+
+### Example 8: Agent-Driven Email Automation
+
+```python
+from peargent import create_agent
+from peargent.tools import email_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an intelligent notification agent
+agent = create_agent(
+    name="SmartNotifier",
+    description="An intelligent agent that sends contextual email notifications",
+    persona="""
+You are a smart notification assistant. When asked to send notifications:
+1. Craft professional, clear subject lines
+2. Write concise, informative email bodies
+3. Use appropriate formatting (HTML when beneficial)
+4. Include relevant details and call-to-action
+5. Use template variables when provided
+Always use the email_tool to send emails.
+    """,
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[email_tool] # [!code highlight]
+)
+
+# Scenario 1: Password reset request
+print("Scenario 1: Password Reset")
+print("-" * 60)
+response = agent.run(
+    "A user named Sarah Martinez (sarah@example.com) requested a password reset. "
+    "Send her an email with a reset link: https://app.example.com/reset/xyz789. "
+    "The link expires in 1 hour. Use security@example.com as sender."
+)
+print(f"Agent Response: {response}\n")
+
+# Scenario 2: Daily summary report
+print("Scenario 2: Daily Summary Report")
+print("-" * 60)
+response = agent.run(
+    "Send a daily summary report to admin@example.com. "
+    "Today's stats: 150 new users, 1,250 active sessions, $5,420 revenue. "
+    "Use reports@example.com as sender."
+)
+print(f"Agent Response: {response}\n")
+
+# Scenario 3: Event reminder
+print("Scenario 3: Event Reminder")
+print("-" * 60)
+response = agent.run(
+    "Send a reminder to team@example.com about tomorrow's product launch meeting "
+    "at 10 AM EST. Include Zoom link: https://zoom.us/j/123456789. "
+    "Use calendar@example.com as sender."
+)
+print(f"Agent Response: {response}")
+```
+
+### Example 9: Batch Notifications
+
+```python
+from peargent.tools import email_tool
+
+# Send multiple notifications
+recipients = [
+    {"email": "alice@example.com", "name": "Alice Johnson"},
+    {"email": "bob@example.com", "name": "Bob Smith"},
+    {"email": "carol@example.com", "name": "Carol Williams"}
+]
+
+print("Sending batch notifications:\n")
+
+for recipient in recipients:
+    result = email_tool.run({
+        "to_email": recipient["email"],
+        "subject": "Important Update for {{ name }}", # [!code highlight]
+        "body": """
+Hello {{ name }},
+
+We have an important update to share with you about our new features.
+
+Check out what's new:
+- Feature A: Enhanced performance
+- Feature B: New integrations
+- Feature C: Improved security
+
+Visit our blog to learn more: https://blog.example.com/updates
+
+Best regards,
+The Team
+        """,
+        "template_vars": {"name": recipient["name"]}, # [!code highlight]
+        "from_email": "updates@example.com"
+    })
+
+    if result["success"]:
+        print(f"✅ Email sent to {recipient['name']}")
+    else:
+        print(f"❌ Failed to send to {recipient['name']}: {result['error']}")
+```
+
+### Example 10: Error Handling
+
+```python
+from peargent.tools import email_tool
+
+# Comprehensive error handling
+def send_with_retry(email_config, max_retries=3):
+    """Send email with retry logic."""
+    for attempt in range(max_retries):
+        result = email_tool.run(email_config)
+
+        if result["success"]:
+            print(f"✅ Email sent successfully on attempt {attempt + 1}")
+            return result
+        else:
+            print(f"❌ Attempt {attempt + 1} failed: {result['error']}")
+
+            # Check for specific errors
+            if "authentication" in result['error'].lower():
+                print("Authentication error - check credentials")
+                break
+            elif "invalid" in result['error'].lower() and "email" in result['error'].lower():
+                print("Invalid email address - check recipient")
+                break
+            elif attempt < max_retries - 1:
+                print(f"Retrying... ({attempt + 2}/{max_retries})")
+
+    return result
+
+# Use the retry function
+result = send_with_retry({
+    "to_email": "user@example.com",
+    "subject": "Test Email",
+    "body": "Testing error handling and retry logic.",
+    "from_email": "test@example.com"
+})
+```
+
+## Parameters
+
+The Email tool accepts the following parameters:
+
+- **to_email** (string, required): Recipient email address. Must be a valid email format
+- **subject** (string, required): Email subject line. Supports template variables when `template_vars` is provided
+- **body** (string, required): Email body content. Supports both plain text and HTML. HTML is automatically detected. Supports template variables when `template_vars` is provided
+- **from_email** (string, required): Sender email address. Must be a valid email format
+- **template_vars** (dictionary, optional): Variables for template substitution. If provided, applies Jinja2 templating (if available) or simple `{variable}` replacement to both subject and body
+- **provider** (string, optional, default: "smtp"): Email provider to use. Options: "smtp" or "resend". Auto-fallback enabled based on available credentials
+- **smtp_use_tls** (boolean, optional, default: True): Whether to use TLS encryption for SMTP connections
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+```python
+{
+    "success": True,  # Boolean indicating success/failure
+    "provider": "smtp",  # Provider used: "smtp" or "resend"
+    "message_id": "abc123...",  # Message ID (Resend only, None for SMTP)
+    "error": None  # Error message if failed, None otherwise
+}
+```
+
+### Success Response Example
+
+```python
+{
+    "success": True,
+    "provider": "smtp",
+    "message_id": None,  # SMTP doesn't provide message IDs
+    "error": None
+}
+
+# OR for Resend:
+{
+    "success": True,
+    "provider": "resend",
+    "message_id": "550e8400-e29b-41d4-a716-446655440000",
+    "error": None
+}
+```
+
+### Error Response Example
+
+```python
+{
+    "success": False,
+    "provider": "smtp",
+    "message_id": None,
+    "error": "SMTP authentication failed. Check username and password."
+}
+```
+
+## Configuration
+
+### SMTP Configuration
+
+Set these environment variables in your `.env` file:
+
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+```
+
+#### Gmail Setup
+
+For Gmail, you need to use an App Password:
+
+1. Enable 2-Factor Authentication in your Google Account
+2. Go to Google Account > Security > 2-Step Verification > App Passwords
+3. Generate a new App Password for "Mail"
+4. Use that password in `SMTP_PASSWORD`
+
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-16-character-app-password
+```
+
+#### Outlook/Office 365 Setup
+
+```bash
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@outlook.com
+SMTP_PASSWORD=your-password
+```
+
+#### Custom SMTP Server Setup
+
+```bash
+SMTP_HOST=mail.yourdomain.com
+SMTP_PORT=587  # or 465 for SSL
+SMTP_USERNAME=noreply@yourdomain.com
+SMTP_PASSWORD=your-password
+```
+
+### Resend Configuration
+
+Set this environment variable in your `.env` file:
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+To get a Resend API key:
+
+1. Sign up at [resend.com](https://resend.com)
+2. Go to API Keys in your dashboard
+3. Create a new API key
+4. Add it to your `.env` file
+
+**Note**: For production use with Resend, you need to verify your domain. For testing, you can use `test@resend.dev` as the sender address.
+
+### Auto-Provider Selection
+
+The tool automatically selects the best available provider:
+
+- If only SMTP credentials are set → uses SMTP
+- If only Resend API key is set → uses Resend
+- If both are set → uses SMTP by default (or specify with `provider` parameter)
+- If neither is set → returns error with helpful message
+
+## Template Systems
+
+### Jinja2 Templating (Recommended)
+
+When Jinja2 is installed, you get full template power:
+
+```python
+# Install Jinja2
+pip install jinja2
+
+# Use advanced features
+result = email_tool.run({
+    "to_email": "user@example.com",
+    "subject": "Order Confirmation",
+    "body": """
+Hello {{ customer.name }},
+
+Your order has been confirmed!
+
+{% if items %}
+Items ordered:
+{% for item in items %}
+  - {{ item.name }}: ${{ item.price }}
+{% endfor %}
+{% endif %}
+
+Total: ${{ total }}
+
+{% if discount > 0 %}
+You saved: ${{ discount }} with your coupon!
+{% endif %}
+
+Thank you for your purchase!
+    """,
+    "template_vars": {
+        "customer": {"name": "Alice"},
+        "items": [
+            {"name": "Widget A", "price": "29.99"},
+            {"name": "Widget B", "price": "39.99"}
+        ],
+        "total": "69.98",
+        "discount": "10.00"
+    },
+    "from_email": "orders@shop.com"
+})
+```
+
+### Simple Templating (Fallback)
+
+Without Jinja2, use simple `{variable}` syntax:
+
+```python
+# Works without Jinja2 installation
+result = email_tool.run({
+    "to_email": "user@example.com",
+    "subject": "Hello {name}!",
+    "body": "Welcome {name}! Your account {account_id} is ready.",
+    "template_vars": {
+        "name": "Bob",
+        "account_id": "12345"
+    },
+    "from_email": "welcome@app.com"
+})
+```
+
+### Without Templates
+
+To send emails without variable substitution:
+
+```python
+# Omit template_vars to send content as-is
+result = email_tool.run({
+    "to_email": "user@example.com",
+    "subject": "Static subject with {{ literal }} brackets",
+    "body": "This {{ variable }} syntax is sent literally, not replaced.",
+    "from_email": "test@example.com"
+    # No template_vars parameter
+})
+```
+
+## Best Practices
+
+1. **Use Environment Variables**: Never hardcode credentials in your code. Always use `.env` files
+2. **Validate Before Sending**: Check email addresses and required fields before calling the tool
+3. **Handle Errors Gracefully**: Always check `result["success"]` and handle errors appropriately
+4. **Use HTML for Rich Content**: Use HTML emails for better formatting and visual appeal
+5. **Test with Different Providers**: Test your emails with both SMTP and Resend to ensure compatibility
+6. **Template for Personalization**: Use template variables for dynamic, personalized content
+7. **Secure Credentials**: Use App Passwords for Gmail, not your main password
+8. **Monitor Delivery**: Check message IDs (Resend) and implement retry logic for critical emails
+9. **Respect Rate Limits**: Be mindful of provider rate limits when sending batch emails
+10. **Professional Formatting**: Use proper email etiquette and clear call-to-action buttons
+
+## Performance Considerations
+
+- SMTP requests typically complete in 2-5 seconds depending on server
+- Resend API requests typically complete in 1-2 seconds
+- Email validation is performed client-side (instant)
+- HTML detection is automatic and efficient
+- Template rendering adds minimal overhead (< 100ms for most templates)
+
+## Troubleshooting
+
+### SMTP Authentication Error
+
+**Error**: `SMTP authentication failed. Check username and password.`
+
+**Solutions**:
+
+- For Gmail: Use an App Password, not your regular password
+- Verify `SMTP_USERNAME` and `SMTP_PASSWORD` are correct
+- Check if 2FA is enabled (required for Gmail App Passwords)
+- Ensure you're using the correct SMTP host and port
+
+```bash
+# Gmail requires App Password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password  # Not your regular password!
+```
+
+### Connection Error
+
+**Error**: `Failed to connect to SMTP server: smtp.example.com:587`
+
+**Solutions**:
+
+- Verify `SMTP_HOST` and `SMTP_PORT` are correct
+- Check your internet connection
+- Ensure your firewall allows SMTP connections
+- Try alternative ports (587 for TLS, 465 for SSL, 25 for plain)
+
+### Invalid Email Address
+
+**Error**: `Invalid recipient email address: invalid-email`
+
+**Solutions**:
+
+- Ensure email addresses follow proper format: `user@domain.com`
+- Check for typos in email addresses
+- Validate email addresses before passing to the tool
+
+```python
+import re
+
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+# Validate before sending
+if is_valid_email(recipient):
+    result = email_tool.run({...})
+else:
+    print("Invalid email address!")
+```
+
+### Missing Configuration
+
+**Error**: `Missing SMTP configuration: SMTP_HOST, SMTP_PASSWORD. Set these in .env file.`
+
+**Solutions**:
+
+- Create a `.env` file in your project root
+- Add all required SMTP credentials
+- Or configure Resend as an alternative
+
+```bash
+# Create .env file
+touch .env
+
+# Add credentials
+echo "SMTP_HOST=smtp.gmail.com" >> .env
+echo "SMTP_PORT=587" >> .env
+echo "SMTP_USERNAME=your-email@gmail.com" >> .env
+echo "SMTP_PASSWORD=your-app-password" >> .env
+```
+
+### Resend API Error
+
+**Error**: `Resend API error: Invalid API key`
+
+**Solutions**:
+
+- Verify `RESEND_API_KEY` is correct
+- Ensure API key starts with `re_`
+- Check if API key has been revoked
+- Generate a new API key if needed
+
+```bash
+# Check your API key format
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Template Rendering Issues
+
+**Problem**: Variables not being replaced
+
+**Solutions**:
+
+- Ensure `template_vars` dictionary is provided
+- For Jinja2: Use `{{ variable }}` syntax
+- For simple: Use `{variable}` syntax
+- Verify variable names match exactly (case-sensitive)
+
+```python
+# Correct usage
+result = email_tool.run({
+    "subject": "Hello {{ name }}",  # or "Hello {name}"
+    "body": "Welcome {{ name }}!",
+    "template_vars": {"name": "Alice"},  # Must provide template_vars
+    ...
+})
+```
+
+### HTML Not Rendering
+
+**Problem**: HTML appears as plain text
+
+**Solutions**:
+
+- Ensure you're using proper HTML tags (`<html>`, `<body>`, `<p>`, etc.)
+- The tool automatically detects HTML by looking for HTML tags
+- Use inline styles for better email client compatibility
+- Test your HTML in different email clients
+
+```python
+# HTML will be auto-detected
+body = """
+<html>
+<body>
+    <h2>This is HTML</h2>
+    <p>It will be sent as HTML, not plain text.</p>
+</body>
+</html>
+"""
+```
+
+### Network Timeout
+
+**Error**: `Request timed out. Please try again.`
+
+**Solutions**:
+
+- Check your internet connection
+- Try again after a few seconds
+- Implement retry logic for critical emails
+- Consider switching providers if timeouts persist
+
+```python
+import time
+
+def send_with_retry(config, max_attempts=3, delay=2):
+    for attempt in range(max_attempts):
+        result = email_tool.run(config)
+        if result["success"]:
+            return result
+        if attempt < max_attempts - 1:
+            time.sleep(delay)
+    return result
+```
+
+## Security Considerations
+
+1. **Never Commit Credentials**: Add `.env` to `.gitignore`
+2. **Use App Passwords**: For Gmail, use App Passwords instead of your main password
+3. **Rotate API Keys**: Regularly rotate your Resend API keys
+4. **Validate Input**: Always validate email addresses and content
+5. **TLS/SSL**: Use encrypted connections (TLS/SSL) for SMTP
+6. **Rate Limiting**: Implement rate limiting for email sending
+7. **Audit Logging**: Log email sending activities for security auditing
+
+## Dependencies
+
+The Email tool has minimal dependencies:
+
+```bash
+# Core dependencies (included in Python standard library)
+# - smtplib (built-in)
+# - email.mime (built-in)
+# - re (built-in)
+
+# Optional dependencies
+pip install requests  # For Resend API support
+pip install jinja2    # For advanced templating
+
+# Or install with Peargent extras
+pip install peargent[email]  # Includes requests and jinja2
+```
+
+<ContributorCredit
+  message="Email Tool contributed by"
+  username="Vivek13121"
+  link="https://github.com/Vivek13121"
+/>
