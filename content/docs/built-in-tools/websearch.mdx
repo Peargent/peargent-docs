@@ -1,0 +1,1046 @@
+---
+title: Web Search
+description: Search the web with Peargent agents using DuckDuckGo
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Web Search</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Search the web with Peargent agents using DuckDuckGo
+</h3>
+
+## Overview
+
+The Web Search Tool is a built-in Peargent **<u>[Tool](/docs/tools)</u>** that enables **<u>[Agents](/docs/agents)</u>** to search the web for up-to-date information using DuckDuckGo. It provides search results with titles, snippets, and URLs, supporting regional filtering, safe search controls, time-based filtering, and customizable result counts. This tool is essential for grounding agent responses with current data and enabling real-time information retrieval.
+
+### Key Features
+
+- **Real-Time Search** - Access up-to-date information from the web via DuckDuckGo
+- **Rich Results** - Get titles, snippets, and URLs for each search result
+- **Regional Filtering** - Localize search results by region (US, UK, Germany, etc.)
+- **Safe Search** - Control content filtering with strict, moderate, or off settings
+- **Time-Based Filtering** - Filter results by day, week, month, or year
+- **Customizable Results** - Control the number of results returned (1-25)
+- **RAG Integration** - Perfect for Retrieval Augmented Generation workflows
+- **Zero Configuration** - No API keys required, works out of the box
+
+## Common Use Cases
+
+1. **Research & Fact-Checking**: Verify claims and gather authoritative information
+2. **Real-Time Information**: Get current news, events, and developments
+3. **RAG Applications**: Retrieve relevant documents for context-aware responses
+4. **Market Research**: Gather competitive intelligence and industry insights
+5. **Content Creation**: Research topics for articles, blogs, and reports
+6. **Data Gathering**: Collect information for analysis and decision-making
+7. **Educational Queries**: Find tutorials, guides, and learning resources
+8. **Trend Analysis**: Monitor emerging trends and topics
+
+## Usage with Agents
+
+The Web Search **<u>[Tool](/docs/tools)</u>** is most powerful when integrated with **<u>[Agents](/docs/agents)</u>**. Agents can use the tool to automatically search the web and synthesize information based on context.
+
+### Creating an Agent with Web Search Tool
+
+To use the Web Search tool with an agent, you need to configure it with a **<u>[Model](/docs/models)</u>** and pass the tool to the agent's `tools` parameter:
+
+<Callout>
+  The Web Search tool uses DuckDuckGo and requires the `ddgs` library. Install
+  it with: `pip install peargent[web-search]`
+</Callout>
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an agent with web search capability
+agent = create_agent(
+    name="ResearchAssistant",
+    description="A helpful research assistant with web search capabilities",
+    persona=(
+        "You are a professional research assistant. When asked questions, "
+        "use the web search tool to find current, authoritative information. "
+        "Provide comprehensive, well-researched answers with proper citations. "
+        "Always cite your sources with URLs and verify facts from multiple sources."
+    ),
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Use the agent to research a topic
+response = agent.run(
+    "What are the latest developments in renewable energy technology in 2026?"
+)
+print(response)
+```
+
+## Examples
+
+### Example 1: Basic Web Search
+
+```python
+from peargent.tools import websearch_tool
+
+# Perform a simple web search
+result = websearch_tool.run({
+    "query": "Python programming tutorials"
+})
+
+if result["success"] and result["results"]:
+    print(f"✅ Found {result['metadata']['result_count']} results")
+    print(f"Search engine: {result['metadata']['search_engine']}")
+
+    # Display top results
+    for i, r in enumerate(result["results"][:3], 1):
+        print(f"\n{i}. {r['title']}")
+        print(f"   URL: {r['url']}")
+        print(f"   {r['snippet'][:150]}...")
+else:
+    print(f"❌ Error: {result['error']}")
+```
+
+### Example 2: Limit Number of Results
+
+```python
+from peargent.tools import websearch_tool
+
+# Search with limited results
+result = websearch_tool.run({
+    "query": "artificial intelligence trends", # [!code highlight]
+    "max_results": 3 # [!code highlight]
+})
+
+if result["success"] and result["results"]:
+    print(f"✅ Found {len(result['results'])} results\n")
+
+    for i, r in enumerate(result["results"], 1):
+        print(f"{i}. {r['title']}")
+        print(f"   {r['url']}\n")
+```
+
+### Example 3: Regional Search Filtering
+
+```python
+from peargent.tools import websearch_tool
+
+# Search with regional filtering
+result = websearch_tool.run({
+    "query": "best restaurants near me",
+    "max_results": 5,
+    "region": "us-en" # [!code highlight]
+})
+
+if result["success"] and result["results"]:
+    print(f"Region: {result['metadata']['region']}")
+    print(f"✅ Found {len(result['results'])} results\n")
+
+    for i, r in enumerate(result["results"], 1):
+        print(f"{i}. {r['title']}")
+        print(f"   {r['url']}")
+```
+
+### Example 4: Time-Based Filtering
+
+```python
+from peargent.tools import websearch_tool
+
+# Search for recent content (past week)
+result = websearch_tool.run({
+    "query": "technology news",
+    "max_results": 5,
+    "time_range": "w" # [!code highlight]
+})
+
+if result["success"] and result["results"]:
+    print(f"✅ Found {len(result['results'])} recent results")
+
+    if 'time_range' in result['metadata']:
+        print(f"Time range: {result['metadata']['time_range']}")
+
+    for i, r in enumerate(result["results"], 1):
+        print(f"\n{i}. {r['title']}")
+        print(f"   {r['snippet'][:100]}...")
+        print(f"   Source: {r['url']}")
+```
+
+### Example 5: Safe Search Settings
+
+```python
+from peargent.tools import websearch_tool
+
+# Search with strict safe search
+result = websearch_tool.run({
+    "query": "educational content for children",
+    "max_results": 5,
+    "safesearch": "strict" # [!code highlight]
+})
+
+if result["success"] and result["results"]:
+    print(f"Safe search: {result['metadata']['safesearch']}")
+    print(f"✅ Found {len(result['results'])} safe results\n")
+
+    for r in result["results"]:
+        print(f"- {r['title']}")
+        print(f"  {r['url']}\n")
+```
+
+### Example 6: Multi-Query Research Pattern
+
+```python
+from peargent.tools import websearch_tool
+
+# RAG-style information retrieval with multiple queries
+queries = [ # [!code highlight]
+    "artificial intelligence ethics",
+    "AI bias and fairness",
+    "responsible AI development"
+]
+
+all_sources = []
+
+for query in queries: # [!code highlight]
+    result = websearch_tool.run({
+        "query": query,
+        "max_results": 3
+    })
+
+    if result["success"] and result["results"]:
+        all_sources.extend(result["results"])
+        print(f"✅ {query}: {len(result['results'])} results")
+
+print(f"\n✅ Gathered {len(all_sources)} total sources across {len(queries)} queries\n")
+
+# Display unique sources
+print("Sample sources:")
+for i, source in enumerate(all_sources[:5], 1):
+    print(f"{i}. {source['title']}")
+    print(f"   {source['url']}\n")
+```
+
+### Example 7: Recent News Search
+
+```python
+from peargent.tools import websearch_tool
+
+# Search for breaking news (past day)
+result = websearch_tool.run({
+    "query": "breaking news technology",
+    "max_results": 5,
+    "time_range": "d" # [!code highlight]
+})
+
+if result["success"] and result["results"]:
+    print("🔥 Recent articles:\n")
+
+    for i, r in enumerate(result["results"], 1):
+        print(f"{i}. {r['title']}")
+        print(f"   {r['snippet'][:100]}...")
+        print(f"   Source: {r['url']}\n")
+```
+
+### Example 8: International Search
+
+```python
+from peargent.tools import websearch_tool
+
+# Search in different languages/regions
+regions = { # [!code highlight]
+    "us-en": "best tech startups",
+    "uk-en": "best tech startups",
+    "de-de": "beste Tech-Startups"
+}
+
+for region, query in regions.items(): # [!code highlight]
+    result = websearch_tool.run({
+        "query": query,
+        "max_results": 2,
+        "region": region # [!code highlight]
+    })
+
+    if result["success"] and result["results"]:
+        print(f"\n{region.upper()} Results:")
+        for r in result["results"]:
+            print(f"- {r['title']}")
+```
+
+### Example 9: Comprehensive Research Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an expert research agent
+research_agent = create_agent(
+    name="DeepResearchAgent",
+    description="An expert research assistant with web search capabilities",
+    persona="""You are an expert research assistant with web search capabilities.
+
+    When researching a topic:
+    1. Break down complex questions into specific search queries
+    2. Search for current, authoritative information
+    3. Cross-reference multiple sources
+    4. Synthesize findings into clear, comprehensive answers
+    5. Always cite your sources with URLs
+
+    Be thorough, accurate, and provide evidence-based responses.""",
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Complex research query
+query = "Compare the latest advancements in solar energy vs wind energy in 2026"
+
+print(f"Research query: {query}\n")
+print("Agent researching...\n")
+
+response = research_agent.run(query)
+print(f"Research findings:\n{response}")
+```
+
+### Example 10: Fact-Checking Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create a fact-checking agent
+fact_checker = create_agent(
+    name="FactChecker",
+    description="A fact-checking assistant with web search",
+    persona="""You are a fact-checking assistant. When given a claim:
+    1. Search for authoritative sources
+    2. Look for recent information
+    3. Verify facts from multiple angles
+    4. Provide a verdict: True, False, Partially True, or Unverified
+    5. Always cite sources with URLs""",
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Claim to verify
+claim = "Python is the most popular programming language in 2026"
+
+print(f"Claim to verify: {claim}\n")
+
+verification = fact_checker.run(f"Fact-check this claim: {claim}")
+print(f"Verification result:\n{verification}")
+```
+
+### Example 11: News Monitoring Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create a news monitoring agent
+news_agent = create_agent(
+    name="NewsMonitor",
+    description="A news monitoring assistant",
+    persona="""You are a news monitoring assistant. When asked about current events:
+    1. Search for the most recent news
+    2. Focus on credible news sources
+    3. Provide a balanced summary
+    4. Include publication dates when available
+    5. Cite all sources""",
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Monitor specific topic
+topic = "quantum computing breakthroughs"
+
+print(f"Monitoring news for: {topic}\n")
+
+news_summary = news_agent.run(
+    f"What are the latest news and developments about {topic}? "
+    "Focus on articles from the past week."
+)
+print(f"News Summary:\n{news_summary}")
+```
+
+### Example 12: Academic Research Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create an academic research agent
+academic_agent = create_agent(
+    name="AcademicResearcher",
+    description="An academic research assistant",
+    persona="""You are an academic research assistant. When researching:
+    1. Search for scholarly articles and research papers
+    2. Focus on peer-reviewed sources when possible
+    3. Look for recent publications and studies
+    4. Provide comprehensive literature reviews
+    5. Include proper citations with URLs
+    6. Identify research gaps and controversies""",
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Research topic
+topic = "machine learning applications in healthcare"
+
+print(f"Academic research on: {topic}\n")
+
+literature_review = academic_agent.run(
+    f"Provide a comprehensive overview of recent research on {topic}. "
+    "Include key findings, methodologies, and future directions."
+)
+print(f"Literature Review:\n{literature_review}")
+```
+
+### Example 13: Competitive Intelligence Agent
+
+```python
+from peargent import create_agent
+from peargent.tools import websearch_tool # [!code highlight]
+from peargent.models import gemini
+
+# Create a competitive intelligence agent
+competitor_agent = create_agent(
+    name="CompetitorAnalyst",
+    description="A competitive intelligence analyst",
+    persona="""You are a competitive intelligence analyst. When analyzing competitors:
+    1. Search for recent company news and announcements
+    2. Identify product launches and features
+    3. Analyze market positioning and strategies
+    4. Look for financial performance indicators
+    5. Track industry trends and disruptions
+    6. Provide actionable insights with sources""",
+    model=gemini("gemini-2.5-flash-lite"),
+    tools=[websearch_tool] # [!code highlight]
+)
+
+# Analyze competitor
+company = "OpenAI"
+
+print(f"Analyzing competitor: {company}\n")
+
+analysis = competitor_agent.run(
+    f"Provide a competitive intelligence report on {company}. "
+    "Include recent developments, product launches, and market strategy."
+)
+print(f"Competitive Analysis:\n{analysis}")
+```
+
+### Example 14: Search Result Processing
+
+```python
+from peargent.tools import websearch_tool
+
+# Search and process results
+result = websearch_tool.run({
+    "query": "Python web frameworks 2026",
+    "max_results": 10
+})
+
+if result["success"] and result["results"]:
+    # Extract domains
+    domains = [r['url'].split('/')[2] for r in result["results"]]
+    unique_domains = set(domains)
+
+    print(f"✅ Found results from {len(unique_domains)} unique domains\n")
+
+    # Group by domain
+    by_domain = {}
+    for r in result["results"]:
+        domain = r['url'].split('/')[2]
+        if domain not in by_domain:
+            by_domain[domain] = []
+        by_domain[domain].append(r)
+
+    # Display grouped results
+    for domain, results in by_domain.items():
+        print(f"\n{domain} ({len(results)} results):")
+        for r in results:
+            print(f"  - {r['title']}")
+```
+
+### Example 15: Error Handling and Retry Logic
+
+```python
+from peargent.tools import websearch_tool
+import time
+
+def search_with_retry(query, max_retries=3, delay=2):
+    """Perform web search with retry logic."""
+
+    for attempt in range(max_retries):
+        result = websearch_tool.run({"query": query})
+
+        if result["success"]:
+            print(f"✅ Search successful on attempt {attempt + 1}")
+            return result
+        else:
+            print(f"❌ Attempt {attempt + 1} failed: {result['error']}")
+
+            # Check for specific errors
+            if "timed out" in result['error'].lower():
+                print("Request timed out - waiting before retry")
+                time.sleep(delay * 2)
+            elif "ddgs library" in result['error'].lower():
+                print("Missing dependency - cannot retry")
+                break
+            elif attempt < max_retries - 1:
+                print(f"Retrying... ({attempt + 2}/{max_retries})")
+                time.sleep(delay)
+
+    return result
+
+# Use the retry function
+result = search_with_retry("artificial intelligence news")
+
+if result["success"] and result["results"]:
+    print(f"\n✅ Found {len(result['results'])} results")
+```
+
+### Example 16: Batch Search with Different Parameters
+
+```python
+from peargent.tools import websearch_tool
+
+# Batch search with different configurations
+search_configs = [ # [!code highlight]
+    {
+        "name": "Recent AI News",
+        "query": "artificial intelligence",
+        "max_results": 5,
+        "time_range": "w"
+    },
+    {
+        "name": "Academic Research",
+        "query": "machine learning research papers",
+        "max_results": 5,
+        "safesearch": "strict"
+    },
+    {
+        "name": "Tech Startups (US)",
+        "query": "tech startups",
+        "max_results": 5,
+        "region": "us-en"
+    },
+    {
+        "name": "Tech Startups (UK)",
+        "query": "tech startups",
+        "max_results": 5,
+        "region": "uk-en"
+    }
+]
+
+print("Performing batch searches:\n")
+
+for config in search_configs: # [!code highlight]
+    name = config.pop("name")
+    result = websearch_tool.run(config)
+
+    if result["success"] and result["results"]:
+        print(f"✅ {name}: {len(result['results'])} results")
+    else:
+        print(f"❌ {name}: {result['error']}")
+
+print("\n✅ Batch search completed")
+```
+
+### Example 17: RAG Pipeline Example
+
+```python
+from peargent.tools import websearch_tool
+
+def rag_search(query, max_sources=10):
+    """
+    Perform RAG-style search and prepare context for LLM.
+
+    Args:
+        query: Search query
+        max_sources: Maximum number of sources to retrieve
+
+    Returns:
+        Dictionary with context and source metadata
+    """
+    # Search for relevant information
+    result = websearch_tool.run({
+        "query": query,
+        "max_results": max_sources
+    })
+
+    if not result["success"] or not result["results"]:
+        return {
+            "context": "",
+            "sources": [],
+            "error": result.get("error")
+        }
+
+    # Build context from search results
+    context_parts = []
+    sources = []
+
+    for i, r in enumerate(result["results"], 1):
+        # Format as context
+        context_parts.append(
+            f"Source {i}: {r['title']}\n"
+            f"URL: {r['url']}\n"
+            f"Content: {r['snippet']}\n"
+        )
+
+        # Store source metadata
+        sources.append({
+            "id": i,
+            "title": r['title'],
+            "url": r['url']
+        })
+
+    return {
+        "context": "\n".join(context_parts),
+        "sources": sources,
+        "query": query,
+        "source_count": len(sources)
+    }
+
+# Use RAG search
+rag_data = rag_search("benefits of renewable energy", max_sources=5)
+
+if rag_data["context"]:
+    print(f"✅ Retrieved {rag_data['source_count']} sources\n")
+    print("Context for LLM:")
+    print("-" * 60)
+    print(rag_data["context"])
+    print("-" * 60)
+
+    print("\nSources:")
+    for source in rag_data["sources"]:
+        print(f"{source['id']}. {source['title']}")
+        print(f"   {source['url']}\n")
+```
+
+## Parameters
+
+The Web Search tool accepts the following parameters:
+
+- **query** (string, required): Search query string. Cannot be empty or whitespace-only
+- **max_results** (integer, optional): Maximum number of results to return. Default: `5`. Range: `1-25`. Values outside this range are automatically clamped
+- **region** (string, optional): Region code for localized results. Default: `"wt-wt"` (worldwide). Examples:
+  - `"us-en"` - United States (English)
+  - `"uk-en"` - United Kingdom (English)
+  - `"de-de"` - Germany (German)
+  - `"fr-fr"` - France (French)
+  - `"es-es"` - Spain (Spanish)
+  - `"ja-jp"` - Japan (Japanese)
+  - `"zh-cn"` - China (Chinese)
+- **safesearch** (string, optional): Safe search filtering level. Default: `"moderate"`. Options:
+  - `"strict"` - Maximum filtering, suitable for children
+  - `"moderate"` - Balanced filtering (default)
+  - `"off"` - No filtering
+- **time_range** (string, optional): Filter results by time period. Default: `None` (all time). Options:
+  - `"d"` - Past day
+  - `"w"` - Past week
+  - `"m"` - Past month
+  - `"y"` - Past year
+  - `None` - All time (no filtering)
+
+## Return Value
+
+The tool returns a dictionary with the following structure:
+
+```python
+{
+    "success": True,  # Boolean indicating success/failure
+    "results": [      # List of search results
+        {
+            "title": "Result Title",
+            "snippet": "Brief description or excerpt from the page",
+            "url": "https://example.com/page"
+        }
+    ],
+    "metadata": {     # Search metadata
+        "query": "search query",
+        "result_count": 5,
+        "search_engine": "DuckDuckGo",
+        "region": "wt-wt",
+        "safesearch": "moderate",
+        "time_range": "w"  # Only present if time_range was specified
+    },
+    "error": None     # Error message if failed, None otherwise
+}
+```
+
+### Success Response Example
+
+```python
+{
+    "success": True,
+    "results": [
+        {
+            "title": "Python Programming Tutorial",
+            "snippet": "Learn Python programming with this comprehensive guide...",
+            "url": "https://example.com/python-tutorial"
+        },
+        {
+            "title": "Advanced Python Techniques",
+            "snippet": "Explore advanced Python programming concepts...",
+            "url": "https://example.com/advanced-python"
+        }
+    ],
+    "metadata": {
+        "query": "Python programming tutorials",
+        "result_count": 2,
+        "search_engine": "DuckDuckGo",
+        "region": "wt-wt",
+        "safesearch": "moderate"
+    },
+    "error": None
+}
+```
+
+### No Results Response Example
+
+```python
+{
+    "success": True,
+    "results": [],
+    "metadata": {
+        "query": "extremely specific query with no results",
+        "result_count": 0,
+        "search_engine": "DuckDuckGo",
+        "message": "No results found for your query"
+    },
+    "error": None
+}
+```
+
+### Error Response Example
+
+```python
+{
+    "success": False,
+    "results": [],
+    "metadata": {},
+    "error": "Request timed out. Please try again."
+}
+```
+
+## Configuration
+
+### Installation
+
+The Web Search tool requires the `ddgs` (DuckDuckGo Search) library:
+
+```bash
+# Install the required dependency
+pip install ddgs
+
+# Or install with Peargent extras
+pip install peargent[web-search]
+```
+
+### No API Keys Required
+
+Unlike many search APIs, the Web Search tool requires no API keys or configuration. It works out of the box once the `ddgs` library is installed.
+
+```python
+from peargent.tools import websearch_tool
+
+# Ready to use immediately
+result = websearch_tool.run({"query": "Python tutorials"})
+```
+
+## Region Codes Reference
+
+Common region codes for localized search:
+
+### North America
+
+- `us-en` - United States (English)
+- `ca-en` - Canada (English)
+- `ca-fr` - Canada (French)
+- `mx-es` - Mexico (Spanish)
+
+### Europe
+
+- `uk-en` - United Kingdom
+- `de-de` - Germany
+- `fr-fr` - France
+- `es-es` - Spain
+- `it-it` - Italy
+- `nl-nl` - Netherlands
+- `pl-pl` - Poland
+- `ru-ru` - Russia
+- `se-sv` - Sweden
+
+### Asia Pacific
+
+- `jp-jp` - Japan
+- `kr-kr` - South Korea
+- `cn-zh` - China
+- `tw-zh` - Taiwan
+- `hk-zh` - Hong Kong
+- `in-en` - India
+- `au-en` - Australia
+- `nz-en` - New Zealand
+
+### South America
+
+- `br-pt` - Brazil
+- `ar-es` - Argentina
+- `cl-es` - Chile
+
+### Middle East & Africa
+
+- `il-he` - Israel
+- `tr-tr` - Turkey
+- `za-en` - South Africa
+
+### Worldwide
+
+- `wt-wt` - Worldwide (default, no regional filtering)
+
+## Best Practices
+
+1. **Use Descriptive Queries**: Craft specific, clear search queries for better results
+2. **Limit Results Appropriately**: Request only the number of results you need (1-25)
+3. **Implement Error Handling**: Always check `result["success"]` before processing results
+4. **Use Time Filters for News**: Apply `time_range` when searching for recent information
+5. **Regional Filtering**: Use `region` parameter for location-specific queries
+6. **Safe Search for Sensitive Content**: Enable `safesearch: "strict"` when appropriate
+7. **Retry Logic**: Implement retry mechanisms for network failures
+8. **Source Verification**: Cross-reference multiple sources for important information
+9. **Rate Limiting**: Add delays between searches to avoid overwhelming DuckDuckGo
+10. **Parse Snippets Carefully**: Snippets may be truncated; visit URLs for full content
+11. **Cache Results**: Store search results to avoid redundant queries
+12. **Agent Personas**: Design agent personas that encourage proper source citation
+
+## Performance Considerations
+
+- Search requests typically complete in 1-3 seconds
+- Network latency affects response time
+- `max_results` parameter impacts processing time linearly
+- DuckDuckGo rate limits may apply for excessive requests (implement delays)
+- Regional searches may be slightly slower than worldwide searches
+- Time-filtered searches perform similarly to unfiltered searches
+- Consider caching results for frequently repeated queries
+
+## Troubleshooting
+
+### Missing ddgs Library
+
+**Error**: `ddgs library is required for web search. Install it with: pip install ddgs`
+
+**Solutions**:
+
+- Install the ddgs library:
+
+```bash
+pip install ddgs
+```
+
+- Or install with Peargent extras:
+
+```bash
+pip install peargent[web-search]
+```
+
+### Empty Query Error
+
+**Error**: `Query cannot be empty`
+
+**Solutions**:
+
+- Ensure query parameter is provided and not empty
+- Verify query is not just whitespace
+
+```python
+# Incorrect
+result = websearch_tool.run({"query": ""})
+result = websearch_tool.run({"query": "   "})
+
+# Correct
+result = websearch_tool.run({"query": "Python tutorials"})
+```
+
+### Network Timeout
+
+**Error**: `Request timed out. Please try again.`
+
+**Solutions**:
+
+- Check your internet connection
+- Verify DuckDuckGo is accessible (not blocked by firewall/proxy)
+- Implement retry logic with delays
+- Try again after a few seconds
+
+```python
+import time
+
+def search_with_retry(query, max_attempts=3):
+    for attempt in range(max_attempts):
+        result = websearch_tool.run({"query": query})
+        if result["success"]:
+            return result
+        if attempt < max_attempts - 1:
+            time.sleep(2)  # Wait before retry
+    return result
+```
+
+### No Results Found
+
+**Problem**: Search returns no results (`result["results"]` is empty)
+
+**Solutions**:
+
+- Try broader, less specific search terms
+- Remove quotes or special characters
+- Check spelling of query terms
+- Try different regional settings
+- Remove or adjust time_range filter
+
+```python
+# Too specific (may return no results)
+result = websearch_tool.run({
+    "query": "extremely specific technical term with typos"
+})
+
+# Better (more likely to return results)
+result = websearch_tool.run({
+    "query": "technical term general concept"
+})
+```
+
+### Network Connection Error
+
+**Error**: `Network error: [connection details]`
+
+**Solutions**:
+
+- Verify internet connectivity
+- Check firewall/proxy settings
+- Ensure DuckDuckGo is not blocked
+- Try different network connection
+- Check if VPN is interfering
+
+### Invalid Parameter Values
+
+**Problem**: Parameters not working as expected
+
+**Solutions**:
+
+- Verify parameter types (query: string, max_results: int, etc.)
+- Ensure `safesearch` is one of: "strict", "moderate", "off"
+- Ensure `time_range` is one of: "d", "w", "m", "y", or None
+- Check region code format (e.g., "us-en", not "us" or "en-us")
+
+```python
+# Incorrect
+result = websearch_tool.run({
+    "query": "AI news",
+    "max_results": "5",  # Should be int, not string
+    "safesearch": "high",  # Invalid value
+    "time_range": "week"  # Should be "w", not "week"
+})
+
+# Correct
+result = websearch_tool.run({
+    "query": "AI news",
+    "max_results": 5,
+    "safesearch": "strict",
+    "time_range": "w"
+})
+```
+
+### Rate Limiting
+
+**Problem**: Searches fail after multiple rapid requests
+
+**Solutions**:
+
+- Implement delays between searches (1-2 seconds recommended)
+- Use batch processing with delays
+- Cache results to avoid redundant queries
+- Limit concurrent search requests
+
+```python
+import time
+
+# Batch search with delays
+queries = ["query1", "query2", "query3"]
+
+for query in queries:
+    result = websearch_tool.run({"query": query})
+    # Process result...
+    time.sleep(1)  # Wait 1 second between searches
+```
+
+### DuckDuckGo Service Issues
+
+**Problem**: Searches consistently failing
+
+**Solutions**:
+
+- Check DuckDuckGo status (https://duckduckgo.com)
+- Try again later if service is down
+- Verify ddgs library is up to date:
+
+```bash
+pip install --upgrade ddgs
+```
+
+### Results Quality Issues
+
+**Problem**: Search results are not relevant
+
+**Solutions**:
+
+- Refine query with more specific terms
+- Use quotes for exact phrase matching: `"exact phrase"`
+- Add contextual keywords to narrow results
+- Try different regional settings
+- Use time_range to filter outdated content
+
+```python
+# Vague query
+result = websearch_tool.run({"query": "python"})
+
+# More specific query
+result = websearch_tool.run({
+    "query": "python web framework django tutorial",
+    "time_range": "m"  # Recent content
+})
+```
+
+## Security Considerations
+
+1. **Query Sanitization**: Validate and sanitize user-provided queries before searching
+2. **Result Validation**: Verify URLs in results before visiting or displaying to users
+3. **Content Filtering**: Use appropriate `safesearch` settings for your use case
+4. **Data Privacy**: Be aware that search queries are sent to DuckDuckGo
+5. **Malicious URLs**: Results may contain malicious links; validate before accessing
+6. **User Input**: Sanitize user input to prevent injection attacks
+7. **Rate Limiting**: Implement rate limiting to prevent abuse
+8. **Error Messages**: Avoid exposing sensitive information in error messages
+9. **Logging**: Log search activities for security auditing and monitoring
+10. **Access Control**: Restrict who can trigger web searches in production systems
+
+## Dependencies
+
+The Web Search tool has minimal dependencies:
+
+```bash
+# Core dependency (required)
+pip install ddgs  # For DuckDuckGo search functionality
+
+# Or install with Peargent extras
+pip install peargent[web-search]
+```
+
+**Note**: Unlike many search APIs, no API keys or authentication is required. The tool uses DuckDuckGo's public search interface.
+
+<ContributorCredit
+  message="Web Search Tool contributed by"
+  username="Vivek13121"
+  link="https://github.com/Vivek13121"
+/>
